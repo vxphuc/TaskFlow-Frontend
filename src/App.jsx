@@ -1,12 +1,16 @@
 import { Button, Spin } from 'antd'
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './contexts/useAuth'
 import AdminLayout from './pages/AdminLayout/AdminLayout'
-import AdminDashboardPage from './pages/AdminDashboard/AdminDashboardPage'
-import DepartmentsPage from './pages/Departments/DepartmentsPage'
-import PositionsPage from './pages/Positions/PositionsPage'
-import UsersPage from './pages/Users/UsersPage'
 import LoginPage from './pages/login/LoginPage'
+
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboard/AdminDashboardPage'))
+const AdminRecurringPage = lazy(() => import('./pages/AdminRecurring/AdminRecurringPage'))
+const AdminReportsPage = lazy(() => import('./pages/AdminReports/AdminReportsPage'))
+const DepartmentsPage = lazy(() => import('./pages/Departments/DepartmentsPage'))
+const PositionsPage = lazy(() => import('./pages/Positions/PositionsPage'))
+const UsersPage = lazy(() => import('./pages/Users/UsersPage'))
 
 function App() {
   const { user, loading, logout } = useAuth()
@@ -42,15 +46,19 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="/admin/departments" element={<DepartmentsPage />} />
-        <Route path="/admin/positions" element={<PositionsPage />} />
-        <Route path="/admin/users" element={<UsersPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/admin" replace />} />
-    </Routes>
+    <Suspense fallback={<div className="routeLoading"><Spin /></div>}>
+      <Routes>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/departments" element={<DepartmentsPage />} />
+          <Route path="/admin/positions" element={<PositionsPage />} />
+          <Route path="/admin/users" element={<UsersPage />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+          <Route path="/admin/recurring" element={<AdminRecurringPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 

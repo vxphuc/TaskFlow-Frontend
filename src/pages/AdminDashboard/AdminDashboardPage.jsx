@@ -1,6 +1,6 @@
 import { Alert, Button, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
-import { FiArrowRight, FiBriefcase, FiLayers, FiUserCheck, FiUsers } from 'react-icons/fi'
+import { FiArrowRight, FiBriefcase, FiLayers, FiPieChart, FiRepeat, FiUserCheck, FiUsers } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getPositionsApi } from '../../api/positionApi'
@@ -72,6 +72,8 @@ export default function AdminDashboardPage() {
                 { title: 'Cơ cấu phòng ban', text: 'Tạo và quản lý các đơn vị trong doanh nghiệp.', path: '/admin/departments', icon: <FiBriefcase /> },
                 { title: 'Hệ thống cấp bậc', text: 'Thiết lập phân cấp linh hoạt cho từng phòng ban.', path: '/admin/positions', icon: <FiLayers /> },
                 { title: 'Danh sách nhân sự', text: 'Quản lý tài khoản, vị trí và người phụ trách.', path: '/admin/users', icon: <FiUsers /> },
+                { title: 'Báo cáo hiệu suất', text: 'Phân tích công việc theo phòng ban và nhân viên.', path: '/admin/reports', icon: <FiPieChart /> },
+                { title: 'Task định kỳ', text: 'Giám sát các mẫu và công việc được sinh hàng tháng.', path: '/admin/recurring', icon: <FiRepeat /> },
               ].map((item) => (
                 <button key={item.path} className={styles.quickItem} onClick={() => navigate(item.path)}>
                   <span>{item.icon}</span><div><strong>{item.title}</strong><small>{item.text}</small></div><FiArrowRight />

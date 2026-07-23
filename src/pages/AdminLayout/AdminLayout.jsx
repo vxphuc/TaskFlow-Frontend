@@ -7,6 +7,8 @@ import {
   FiLayers,
   FiLogOut,
   FiMenu,
+  FiPieChart,
+  FiRepeat,
   FiUsers,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -20,6 +22,8 @@ const navigation = [
   { key: '/admin/departments', icon: <FiBriefcase />, label: 'Phòng ban' },
   { key: '/admin/positions', icon: <FiLayers />, label: 'Cấp bậc' },
   { key: '/admin/users', icon: <FiUsers />, label: 'Nhân sự' },
+  { key: '/admin/reports', icon: <FiPieChart />, label: 'Báo cáo' },
+  { key: '/admin/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
 ]
 
 function Brand() {
