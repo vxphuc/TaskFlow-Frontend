@@ -1,0 +1,46 @@
+.page { max-width: 1380px; margin: 0 auto; }
+.pageHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.pageHeader h1 { margin: 5px 0; font-size: 28px; line-height: 1.25; }
+.pageHeader p { margin: 0; color: #68766d; }
+.eyebrow { color: #206a37; font-size: 11px; font-weight: 800; }
+.toolbar { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid #dfe7e1; border-radius: 8px; background: #fff; }
+.summary { display: flex; align-items: baseline; gap: 7px; color: #627168; }
+.summary svg { align-self: center; color: #206a37; font-size: 19px; }
+.summary strong { color: #17211a; font-size: 21px; }
+.filters { display: flex; gap: 10px; }
+.filters :global(.ant-select) { width: 180px; }
+.alert { margin-bottom: 16px; }
+.taskGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.taskCard { min-height: 206px; display: flex; flex-direction: column; padding: 18px; border: 1px solid #dfe7e1; border-radius: 8px; color: #26372c; background: #fff; cursor: pointer; text-align: left; }
+.taskCard:hover { border-color: #8eb29a; box-shadow: 0 6px 18px rgba(35,82,49,.07); }
+.cardTop, .cardBottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.priority, .status { padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.priority { color: #526158; background: #edf1ee; }
+.priority.low { color: #36658f; background: #e9f1f8; }
+.priority.high { color: #98591e; background: #fff0df; }
+.priority.urgent { color: #a33434; background: #fbe9e9; }
+.status { color: #526158; background: #edf1ee; }
+.status.in_progress, .status.reviewing { color: #225c8c; background: #e8f2fa; }
+.status.submitted { color: #7a581b; background: #fff3d8; }
+.status.completed { color: #206a37; background: #e8f4eb; }
+.status.rejected, .status.cancelled { color: #9b3434; background: #fbe9e9; }
+.title { margin: 20px 0 8px; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.description { min-height: 43px; display: -webkit-box; overflow: hidden; color: #68766d; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.cardBottom { margin-top: auto; padding-top: 18px; color: #607067; border-top: 1px solid #e8ece9; }
+.cardBottom small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { padding: 70px 20px; border: 1px solid #dfe7e1; border-radius: 8px; background: #fff; }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.formGrid :global(.ant-picker) { width: 100%; }
+.modalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+@media (max-width: 1050px) { .taskGrid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 680px) {
+  .pageHeader { align-items: stretch; flex-direction: column; }
+  .pageHeader h1 { font-size: 24px; }
+  .toolbar { align-items: stretch; flex-direction: column; }
+  .filters { display: grid; grid-template-columns: 1fr 1fr; }
+  .filters :global(.ant-select) { width: 100%; }
+  .taskGrid { grid-template-columns: 1fr; }
+  .taskCard { min-height: 190px; }
+  .formGrid { grid-template-columns: 1fr; gap: 0; }
+}

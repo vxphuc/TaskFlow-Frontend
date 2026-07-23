@@ -26,7 +26,7 @@ export default function LoginPage() {
       <section className={styles.identity}>
         <div className={styles.identityInner}>
           <div className={styles.brand}>
-            <span className={styles.logoMark}><img src="/logo.png" alt="" /></span>
+            <span className={styles.logoMark}><img src="/logo2.png" alt="" /></span>
             <strong>TaskFlow</strong>
           </div>
           <div className={styles.statement}>
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       <section className={styles.formSide}>
         <div className={styles.mobileBrand}>
-          <span className={styles.logoMark}><img src="/logo.png" alt="" /></span>
+          <span className={styles.logoMark}><img src="/logo2.png" alt="" /></span>
           <strong>TaskFlow</strong>
         </div>
         <div className={styles.formWrap}>

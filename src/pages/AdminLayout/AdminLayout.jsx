@@ -30,7 +30,7 @@ function Brand() {
   return (
     <NavLink to="/admin" className={styles.brand} aria-label="TaskFlow Admin">
       <span className={styles.brandMark} aria-hidden="true">
-        <img src="/logo.png" alt="" />
+        <img src="/logo2.png" alt="" />
       </span>
       <span className={styles.brandName}>TaskFlow</span>
     </NavLink>
