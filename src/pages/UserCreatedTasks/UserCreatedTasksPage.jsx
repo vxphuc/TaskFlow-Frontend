@@ -17,6 +17,7 @@ export default function UserCreatedTasksPage() {
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [tasks, setTasks] = useState(null)
+  const [createdSubtasks, setCreatedSubtasks] = useState([])
   const [assignees, setAssignees] = useState([])
   const [status, setStatus] = useState()
   const [priority, setPriority] = useState()
@@ -32,6 +33,7 @@ export default function UserCreatedTasksPage() {
         getUsersApi({ is_active: true }),
       ])
       setTasks(tasksRes.data.tasks || [])
+      setCreatedSubtasks(tasksRes.data.created_subtasks || [])
       setAssignees(usersRes.data.users || [])
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải dữ liệu giao việc.')
@@ -45,14 +47,6 @@ export default function UserCreatedTasksPage() {
   const assigneesById = useMemo(
     () => Object.fromEntries(assignees.map((item) => [item.id, item])),
     [assignees],
-  )
-
-  const subtaskCount = useMemo(
-    () => tasks?.reduce(
-      (total, task) => total + (task.subtasks?.length || 0),
-      0,
-    ) || 0,
-    [tasks],
   )
 
   const createTask = async (values) => {
@@ -90,7 +84,7 @@ export default function UserCreatedTasksPage() {
         <div className={styles.summary}>
           <FiSend />
           <strong>{tasks?.length || 0}</strong>
-          <span>task chính · {subtaskCount} subtask đã giao</span>
+          <span>task chính · {createdSubtasks.length} subtask bạn đã giao</span>
         </div>
         <div className={styles.filters}>
           <Select allowClear placeholder="Tất cả trạng thái" options={taskStatuses} value={status} onChange={setStatus} />
@@ -99,16 +93,18 @@ export default function UserCreatedTasksPage() {
       </section>
 
       {error && <Alert type="error" showIcon message={error} className={styles.alert} closable onClose={() => setError('')} />}
-      {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : tasks.length === 0 ? (
+      {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : tasks.length === 0 && createdSubtasks.length === 0 ? (
         <section className={styles.empty}>
           <Empty description="Bạn chưa giao công việc nào">
             <Button type="primary" icon={<FiPlus />} onClick={() => setModalOpen(true)}>Tạo task đầu tiên</Button>
           </Empty>
         </section>
       ) : (
-        <section className={styles.taskGrid}>
-          {tasks.map((task) => (
-            <article key={task.id} className={styles.taskCard}>
+        <>
+          {tasks.length > 0 && (
+            <section className={styles.taskGrid}>
+              {tasks.map((task) => (
+                <article key={task.id} className={styles.taskCard}>
               <button
                 type="button"
                 className={styles.taskMain}
@@ -158,9 +154,50 @@ export default function UserCreatedTasksPage() {
                   </div>
                 )}
               </div>
-            </article>
-          ))}
-        </section>
+                </article>
+              ))}
+            </section>
+          )}
+
+          <section className={styles.createdSubtasks}>
+            <div className={styles.createdSubtaskHeader}>
+              <div>
+                <span>SUBTASK TÔI GIAO</span>
+                <h2>Danh sách công việc con</h2>
+              </div>
+              <strong>{createdSubtasks.length}</strong>
+            </div>
+            {createdSubtasks.length === 0 ? (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Bạn chưa giao subtask nào" />
+            ) : (
+              <div className={`${styles.subtaskList} ${styles.createdSubtaskList}`}>
+                {createdSubtasks.map((subtask) => (
+                  <button
+                    type="button"
+                    key={subtask.id}
+                    onClick={() => navigate(`/app/tasks/${subtask.id}`)}
+                  >
+                    <FiCornerDownRight />
+                    <span>
+                      <strong>{subtask.title}</strong>
+                      <small>
+                        <FiUser />
+                        {subtask.assigned_to_name || assigneesById[subtask.assigned_to]?.full_name || 'Người thực hiện'}
+                        {' · '}
+                        {subtask.parent_task_title || 'Task chính'}
+                        {' · '}
+                        Hạn {formatDateTime(subtask.due_date)}
+                      </small>
+                    </span>
+                    <span className={`${styles.status} ${styles[subtask.status.toLowerCase()]}`}>
+                      {getStatusLabel(subtask.status)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
 
       <Modal

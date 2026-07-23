@@ -50,6 +50,22 @@ export default function UserAssignedTasksPage() {
     Promise.resolve().then(loadTasks)
   }, [loadTasks])
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadTasks()
+    }, 10000)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadTasks()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [loadTasks])
+
   const counts = useMemo(() => ({
     all: tasks?.length || 0,
     active: tasks?.filter((task) => ['TODO', 'IN_PROGRESS', 'REJECTED'].includes(task.status)).length || 0,

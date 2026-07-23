@@ -28,6 +28,7 @@ import {
   FiMessageSquare,
   FiPlus,
   FiPlay,
+  FiRefreshCw,
   FiRotateCcw,
   FiSend,
   FiSlash,
@@ -147,6 +148,33 @@ export default function UserTaskDetailPage() {
   useEffect(() => {
     Promise.resolve().then(loadDetail)
   }, [loadDetail])
+
+  const refreshTaskState = useCallback(async () => {
+    if (document.visibilityState !== 'visible') return
+
+    try {
+      const response = await getTaskDetailApi(taskId)
+      setTask(response.data.task)
+    } catch {
+      // The full detail loader owns the user-facing error state.
+    }
+  }, [taskId])
+
+  useEffect(() => {
+    const intervalId = window.setInterval(refreshTaskState, 5000)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshTaskState()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [refreshTaskState])
 
   const refreshComments = useCallback(async () => {
     if (document.visibilityState !== 'visible') return
@@ -325,10 +353,13 @@ export default function UserTaskDetailPage() {
   const actions = useMemo(() => {
     if (!task) return []
     const items = []
-    if (isAssignee && ['TODO', 'REJECTED'].includes(task.status)) {
+    if (isAssignee && task.status === 'TODO') {
       items.push({ key: 'start', label: 'Bắt đầu', icon: <FiPlay />, primary: true, run: () => runAction(() => startTaskApi(taskId)) })
     }
-    if (isAssignee && ['IN_PROGRESS', 'REJECTED'].includes(task.status)) {
+    if (isAssignee && task.status === 'REJECTED') {
+      items.push({ key: 'restart', label: 'Nhận làm lại', icon: <FiRefreshCw />, primary: true, run: () => runAction(() => startTaskApi(taskId)) })
+    }
+    if (isAssignee && task.status === 'IN_PROGRESS') {
       items.push({ key: 'submit', label: 'Gửi kết quả', icon: <FiSend />, primary: true, modal: 'submit' })
     }
     if (isAssignee && !task.parent_task_id && isTaskOpen(task.status)) {
