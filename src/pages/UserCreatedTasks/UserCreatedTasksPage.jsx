@@ -1,6 +1,12 @@
 import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton } from 'antd'
-import { useCallback, useEffect, useState } from 'react'
-import { FiArrowRight, FiPlus, FiSend } from 'react-icons/fi'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  FiArrowRight,
+  FiCornerDownRight,
+  FiPlus,
+  FiSend,
+  FiUser,
+} from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { createTaskApi, getMyCreatedTasksApi } from '../../api/taskApi'
 import { getUsersApi } from '../../api/userApi'
@@ -36,6 +42,19 @@ export default function UserCreatedTasksPage() {
     Promise.resolve().then(loadData)
   }, [loadData])
 
+  const assigneesById = useMemo(
+    () => Object.fromEntries(assignees.map((item) => [item.id, item])),
+    [assignees],
+  )
+
+  const subtaskCount = useMemo(
+    () => tasks?.reduce(
+      (total, task) => total + (task.subtasks?.length || 0),
+      0,
+    ) || 0,
+    [tasks],
+  )
+
   const createTask = async (values) => {
     setSubmitting(true)
     try {
@@ -68,7 +87,11 @@ export default function UserCreatedTasksPage() {
       </header>
 
       <section className={styles.toolbar}>
-        <div className={styles.summary}><FiSend /><strong>{tasks?.length || 0}</strong><span>công việc</span></div>
+        <div className={styles.summary}>
+          <FiSend />
+          <strong>{tasks?.length || 0}</strong>
+          <span>task chính · {subtaskCount} subtask đã giao</span>
+        </div>
         <div className={styles.filters}>
           <Select allowClear placeholder="Tất cả trạng thái" options={taskStatuses} value={status} onChange={setStatus} />
           <Select allowClear placeholder="Mọi mức ưu tiên" options={priorityOptions} value={priority} onChange={setPriority} />
@@ -85,17 +108,57 @@ export default function UserCreatedTasksPage() {
       ) : (
         <section className={styles.taskGrid}>
           {tasks.map((task) => (
-            <button type="button" key={task.id} className={styles.taskCard} onClick={() => navigate(`/app/tasks/${task.id}`)}>
-              <span className={styles.cardTop}>
-                <span className={`${styles.priority} ${styles[task.priority.toLowerCase()]}`}>{getPriorityLabel(task.priority)}</span>
-                <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>{getStatusLabel(task.status)}</span>
-              </span>
-              <strong className={styles.title}>{task.title}</strong>
-              <span className={styles.description}>{task.description || 'Không có mô tả công việc.'}</span>
-              <span className={styles.cardBottom}>
-                <small>Hạn {formatDateTime(task.due_date)}</small><FiArrowRight />
-              </span>
-            </button>
+            <article key={task.id} className={styles.taskCard}>
+              <button
+                type="button"
+                className={styles.taskMain}
+                onClick={() => navigate(`/app/tasks/${task.id}`)}
+              >
+                <span className={styles.cardTop}>
+                  <span className={`${styles.priority} ${styles[task.priority.toLowerCase()]}`}>{getPriorityLabel(task.priority)}</span>
+                  <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>{getStatusLabel(task.status)}</span>
+                </span>
+                <strong className={styles.title}>{task.title}</strong>
+                <span className={styles.description}>{task.description || 'Không có mô tả công việc.'}</span>
+                <span className={styles.cardBottom}>
+                  <small>Hạn {formatDateTime(task.due_date)}</small><FiArrowRight />
+                </span>
+              </button>
+
+              <div className={styles.subtasks}>
+                <div className={styles.subtaskHeader}>
+                  <span>Subtask đã giao</span>
+                  <strong>{task.subtasks?.length || 0}</strong>
+                </div>
+                {!task.subtasks?.length ? (
+                  <span className={styles.noSubtask}>Chưa có subtask</span>
+                ) : (
+                  <div className={styles.subtaskList}>
+                    {task.subtasks.map((subtask) => (
+                      <button
+                        type="button"
+                        key={subtask.id}
+                        onClick={() => navigate(`/app/tasks/${subtask.id}`)}
+                      >
+                        <FiCornerDownRight />
+                        <span>
+                          <strong>{subtask.title}</strong>
+                          <small>
+                            <FiUser />
+                            {assigneesById[subtask.assigned_to]?.full_name || 'Người thực hiện'}
+                            {' · '}
+                            Hạn {formatDateTime(subtask.due_date)}
+                          </small>
+                        </span>
+                        <span className={`${styles.status} ${styles[subtask.status.toLowerCase()]}`}>
+                          {getStatusLabel(subtask.status)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </article>
           ))}
         </section>
       )}

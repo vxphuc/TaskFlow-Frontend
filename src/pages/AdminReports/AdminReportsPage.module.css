@@ -81,6 +81,48 @@
     font-size: 27px; 
     line-height: 1.2; 
 }
+.typeSummary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+.typeSummary article {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid #dfe7e1;
+    border-radius: 8px;
+    background: #fff;
+}
+.typeSummary article > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+.typeSummary article > div span {
+    color: #718077;
+    font-size: 12px;
+}
+.typeSummary p {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0;
+}
+.typeSummary p span {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 6px;
+    color: #718077;
+    background: #f5f8f6;
+    font-size: 11px;
+}
+.typeSummary p strong {
+    color: #26372c;
+    font-size: 17px;
+}
 .ratePanel { 
     display: grid; 
     grid-template-columns: 1fr 1fr 1.1fr; 
@@ -144,13 +186,26 @@
     color: #758279; 
     font-size: 13px; 
 }
+.panelTools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 .taskName { 
     display: grid; 
     gap: 3px; 
 }
 .taskName span { 
+    display: flex;
+    align-items: center;
+    gap: 5px;
     color: #758279; 
     font-size: 11px; 
+}
+.taskName :global(.ant-tag) {
+    margin: 0;
+    font-size: 10px;
+    line-height: 20px;
 }
 .emptyReport { 
     margin: 80px 0; 
@@ -186,6 +241,7 @@
 @media (max-width: 1050px) { 
     .filters { grid-template-columns: 1fr 1fr; } 
     .statGrid { grid-template-columns: 1fr 1fr; } 
+    .typeSummary { grid-template-columns: 1fr; }
     .ratePanel { grid-template-columns: 1fr 1fr; } 
     .miniSummary { 
         grid-column: 1 / -1; 
@@ -200,4 +256,8 @@
     .filters :global(.ant-picker), 
     .filters :global(.ant-select) { width: 100%; } 
     .miniSummary { grid-column: auto; } 
+    .panelTitle { align-items: flex-start; flex-direction: column; }
+    .panelTools { width: 100%; align-items: stretch; flex-direction: column; }
+    .panelTools :global(.ant-segmented) { width: 100%; overflow-x: auto; }
+    .typeSummary p { grid-template-columns: 1fr; }
 }

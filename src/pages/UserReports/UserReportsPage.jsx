@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiAlertCircle,
   FiCheckCircle,
+  FiClipboard,
   FiClock,
+  FiCornerDownRight,
   FiRefreshCw,
   FiTarget,
   FiUsers,
@@ -26,6 +28,7 @@ export default function UserReportsPage() {
   const navigate = useNavigate()
   const [month, setMonth] = useState(dayjs())
   const [view, setView] = useState('assignee')
+  const [taskKind, setTaskKind] = useState('ALL')
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
 
@@ -48,6 +51,15 @@ export default function UserReportsPage() {
   }, [loadReport])
 
   const summary = useMemo(() => report?.summary || {}, [report])
+  const workItemBreakdown = report?.work_item_breakdown || {}
+  const filteredTasks = useMemo(
+    () => report?.tasks?.filter((task) => {
+      if (taskKind === 'MAIN_TASK') return !task.parent_task_id
+      if (taskKind === 'SUBTASK') return Boolean(task.parent_task_id)
+      return true
+    }) || [],
+    [report, taskKind],
+  )
   const stats = useMemo(() => {
     if (!report) return []
     return [
@@ -99,6 +111,39 @@ export default function UserReportsPage() {
             ))}
           </section>
 
+          <section className={styles.workTypeGrid}>
+            {[
+              {
+                key: 'main_tasks',
+                label: 'Task chính',
+                icon: <FiClipboard />,
+                data: workItemBreakdown.main_tasks,
+              },
+              {
+                key: 'subtasks',
+                label: 'Subtask',
+                icon: <FiCornerDownRight />,
+                data: workItemBreakdown.subtasks,
+              },
+            ].map((item) => (
+              <article key={item.key} className={styles.workTypeCard}>
+                <header>
+                  <span>{item.icon}</span>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <small>{item.data?.total_tasks || 0} công việc trong kỳ</small>
+                  </div>
+                </header>
+                <div>
+                  <span><small>Hoàn thành</small><strong>{item.data?.completed_tasks || 0}</strong></span>
+                  <span><small>Đang xử lý</small><strong>{item.data?.active_tasks || 0}</strong></span>
+                  <span><small>Quá hạn</small><strong>{item.data?.overdue_tasks || 0}</strong></span>
+                  <span><small>Tỷ lệ</small><strong>{item.data?.completion_rate || 0}%</strong></span>
+                </div>
+              </article>
+            ))}
+          </section>
+
           <div className={styles.metricsGrid}>
             <section className={styles.rates}>
               <div>
@@ -130,12 +175,13 @@ export default function UserReportsPage() {
               {!report.assignee_breakdown?.length ? <Empty description="Chưa có dữ liệu nhân sự" /> : (
                 <div className={styles.peopleList}>
                   <div className={styles.peopleHeader}>
-                    <span>Nhân sự</span><span>Task</span><span>Hoàn thành</span><span>Quá hạn</span><span>Trả lại</span>
+                    <span>Nhân sự</span><span>Task chính</span><span>Subtask</span><span>Hoàn thành</span><span>Quá hạn</span><span>Trả lại</span>
                   </div>
                   {report.assignee_breakdown.map((item) => (
                     <div className={styles.personRow} key={item.user_id}>
                       <strong>{item.full_name || 'Nhân sự'}</strong>
-                      <span>{item.total_tasks}</span>
+                      <span>{item.main_task_count || 0}</span>
+                      <span>{item.subtask_count || 0}</span>
                       <span>{item.completed_tasks}</span>
                       <span>{item.overdue_tasks}</span>
                       <span>{item.total_rejections}</span>
@@ -148,13 +194,31 @@ export default function UserReportsPage() {
 
           <section className={styles.section}>
             <div className={styles.sectionHeading}>
-              <div><h2>Chi tiết công việc</h2><p>{report.tasks?.length || 0} task trong kỳ báo cáo.</p></div>
+              <div><h2>Chi tiết công việc</h2><p>{filteredTasks.length} công việc phù hợp.</p></div>
+              <Segmented
+                size="small"
+                value={taskKind}
+                onChange={setTaskKind}
+                options={[
+                  { value: 'ALL', label: 'Tất cả' },
+                  { value: 'MAIN_TASK', label: 'Task chính' },
+                  { value: 'SUBTASK', label: 'Subtask' },
+                ]}
+              />
             </div>
-            {!report.tasks?.length ? <Empty description="Không có công việc trong tháng này" /> : (
+            {!filteredTasks.length ? <Empty description="Không có công việc phù hợp" /> : (
               <div className={styles.taskList}>
-                {report.tasks.map((task) => (
+                {filteredTasks.map((task) => (
                   <button type="button" key={task.id} onClick={() => navigate(`/app/tasks/${task.id}`)}>
-                    <span><strong>{task.title}</strong><small>Hạn {formatDateTime(task.due_date)}</small></span>
+                    <span>
+                      <strong>{task.title}</strong>
+                      <small>
+                        <b className={task.parent_task_id ? styles.subtaskType : styles.mainTaskType}>
+                          {task.parent_task_id ? 'Subtask' : 'Task chính'}
+                        </b>
+                        Hạn {formatDateTime(task.due_date)}
+                      </small>
+                    </span>
                     <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>{getStatusLabel(task.status)}</span>
                   </button>
                 ))}

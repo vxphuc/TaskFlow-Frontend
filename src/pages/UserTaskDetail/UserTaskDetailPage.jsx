@@ -7,6 +7,7 @@ import {
   Form,
   Input,
   Modal,
+  Popconfirm,
   Select,
   Skeleton,
   Tabs,
@@ -30,6 +31,7 @@ import {
   FiRotateCcw,
   FiSend,
   FiSlash,
+  FiTrash2,
   FiUpload,
   FiX,
 } from 'react-icons/fi'
@@ -39,6 +41,7 @@ import {
   cancelTaskApi,
   createSubtaskApi,
   createTaskCommentApi,
+  deleteAttachmentApi,
   downloadAttachmentApi,
   getTaskAttachmentsApi,
   getTaskCommentsApi,
@@ -67,6 +70,7 @@ import {
 import styles from './UserTaskDetailPage.module.css'
 
 const actionLabels = {
+  ATTACHMENT_DELETED: 'Đã xóa file đính kèm',
   ATTACHMENT_UPLOADED: 'Đã tải file đính kèm',
   TASK_CREATED: 'Đã tạo công việc',
   TASK_STARTED: 'Đã bắt đầu thực hiện',
@@ -301,6 +305,23 @@ export default function UserTaskDetailPage() {
     }
   }
 
+  const deleteAttachment = async (attachment) => {
+    setAttachmentLoading(attachment.id)
+    setError('')
+    try {
+      await deleteAttachmentApi(attachment.id)
+      message.success('Đã xóa file đính kèm.')
+      await loadDetail()
+    } catch (deleteError) {
+      setError(
+        deleteError.response?.data?.message
+        || 'Không thể xóa file đính kèm.',
+      )
+    } finally {
+      setAttachmentLoading(null)
+    }
+  }
+
   const actions = useMemo(() => {
     if (!task) return []
     const items = []
@@ -454,15 +475,37 @@ export default function UserTaskDetailPage() {
                                     {formatDateTime(attachment.created_at)}
                                   </small>
                                 </span>
-                                <Tooltip title="Tải xuống">
-                                  <Button
-                                    type="text"
-                                    icon={<FiDownload />}
-                                    loading={attachmentLoading === attachment.id}
-                                    onClick={() => downloadAttachment(attachment)}
-                                    aria-label={`Tải ${attachment.file_name}`}
-                                  />
-                                </Tooltip>
+                                <span className={styles.attachmentActions}>
+                                  <Tooltip title="Tải xuống">
+                                    <Button
+                                      type="text"
+                                      icon={<FiDownload />}
+                                      loading={attachmentLoading === attachment.id}
+                                      onClick={() => downloadAttachment(attachment)}
+                                      aria-label={`Tải ${attachment.file_name}`}
+                                    />
+                                  </Tooltip>
+                                  {attachment.can_delete && (
+                                    <Popconfirm
+                                      title="Xóa file đính kèm?"
+                                      description="File sẽ bị xóa khỏi lần gửi kết quả này."
+                                      okText="Xóa file"
+                                      cancelText="Hủy"
+                                      okButtonProps={{ danger: true }}
+                                      onConfirm={() => deleteAttachment(attachment)}
+                                    >
+                                      <Tooltip title="Xóa file">
+                                        <Button
+                                          type="text"
+                                          danger
+                                          icon={<FiTrash2 />}
+                                          disabled={attachmentLoading === attachment.id}
+                                          aria-label={`Xóa ${attachment.file_name}`}
+                                        />
+                                      </Tooltip>
+                                    </Popconfirm>
+                                  )}
+                                </span>
                               </article>
                             )
                           })}

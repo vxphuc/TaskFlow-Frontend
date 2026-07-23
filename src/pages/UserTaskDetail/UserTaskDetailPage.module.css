@@ -200,13 +200,18 @@
 .attachment {
   min-height: 64px;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid #dfe7e1;
   border-radius: 6px;
   background: #fff;
+}
+.attachmentActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 .fileIcon {
   width: 40px;
@@ -309,7 +314,7 @@
   .submissionHead { flex-direction: column; }
   .attachmentToolbar { align-items: stretch; flex-direction: column; }
   .attachmentToolbar button { width: 100%; }
-  .attachment { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 9px; }
+  .attachment { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; }
   .fileIcon { width: 36px; height: 36px; }
   .fileInfo small { line-height: 1.45; }
   .comment > div:last-child { max-width: calc(100% - 44px); }

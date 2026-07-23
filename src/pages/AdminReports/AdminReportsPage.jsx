@@ -62,6 +62,7 @@ export default function AdminReportsPage() {
   const [userId, setUserId] = useState()
   const [period, setPeriod] = useState(dayjs())
   const [report, setReport] = useState(null)
+  const [taskKind, setTaskKind] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -159,6 +160,12 @@ export default function AdminReportsPage() {
   const summary = report?.summary
   const totalTasks = summary?.total_tasks ?? summary?.total_assigned_tasks ?? 0
   const tasks = report?.tasks || []
+  const filteredTasks = tasks.filter((task) => {
+    if (taskKind === 'MAIN_TASK') return !task.parent_task_id
+    if (taskKind === 'SUBTASK') return Boolean(task.parent_task_id)
+    return true
+  })
+  const workItemBreakdown = report?.work_item_breakdown || {}
 
   const statItems = summary ? [
     { label: 'Tổng công việc', value: totalTasks, icon: <FiBarChart2 />, tone: 'neutral' },
@@ -168,7 +175,7 @@ export default function AdminReportsPage() {
   ] : []
 
   const taskColumns = [
-    { title: 'Công việc', dataIndex: 'title', key: 'title', width: 260, render: (value, row) => <div className={styles.taskName}><strong>{value}</strong><span>{row.task_type === 'RECURRING' ? 'Định kỳ' : 'Một lần'}</span></div> },
+    { title: 'Công việc', dataIndex: 'title', key: 'title', width: 280, render: (value, row) => <div className={styles.taskName}><strong>{value}</strong><span><Tag color={row.parent_task_id ? 'blue' : 'green'}>{row.parent_task_id ? 'Subtask' : 'Task chính'}</Tag>{row.task_type === 'RECURRING' ? 'Định kỳ' : 'Một lần'}</span></div> },
     { title: 'Người nhận', dataIndex: 'assigned_to', key: 'assignee', width: 170, render: (value) => usersById[value]?.full_name || 'Không xác định' },
     { title: 'Ưu tiên', dataIndex: 'priority', key: 'priority', width: 115, render: (value) => <Tag color={priorityMeta[value]?.[1]}>{priorityMeta[value]?.[0] || value}</Tag> },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 145, render: (value) => <StatusTag status={value} /> },
@@ -179,6 +186,8 @@ export default function AdminReportsPage() {
   const breakdownColumns = mode === 'department' ? [
     { title: 'Cấp bậc', dataIndex: 'position_name', key: 'name', render: (value) => value || 'Chưa xác định' },
     { title: 'Tổng task', dataIndex: 'total_tasks', key: 'total', width: 110 },
+    { title: 'Task chính', dataIndex: 'main_task_count', key: 'main', width: 105 },
+    { title: 'Subtask', dataIndex: 'subtask_count', key: 'subtask', width: 95 },
     { title: 'Hoàn thành', dataIndex: 'completed_tasks', key: 'completed', width: 120 },
     { title: 'Quá hạn', dataIndex: 'overdue_tasks', key: 'overdue', width: 100 },
   ] : []
@@ -186,6 +195,8 @@ export default function AdminReportsPage() {
   const assigneeColumns = [
     { title: 'Nhân viên', dataIndex: 'full_name', key: 'name', render: (value) => <strong>{value || 'Không xác định'}</strong> },
     { title: 'Tổng task', dataIndex: 'total_tasks', key: 'total', width: 105 },
+    { title: 'Task chính', dataIndex: 'main_task_count', key: 'main', width: 105 },
+    { title: 'Subtask', dataIndex: 'subtask_count', key: 'subtask', width: 95 },
     { title: 'Hoàn thành', dataIndex: 'completed_tasks', key: 'completed', width: 115 },
     { title: 'Quá hạn', dataIndex: 'overdue_tasks', key: 'overdue', width: 95 },
     { title: 'Lần trả lại', dataIndex: 'total_rejections', key: 'rejections', width: 105 },
@@ -233,6 +244,16 @@ export default function AdminReportsPage() {
           <section className={styles.statGrid}>
             {statItems.map((item) => <article className={styles.statItem} key={item.label}><span data-tone={item.tone}>{item.icon}</span><div><small>{item.label}</small><strong>{item.value || 0}</strong></div></article>)}
           </section>
+          <section className={styles.typeSummary}>
+            <article>
+              <div><strong>Task chính</strong><span>{workItemBreakdown.main_tasks?.total_tasks || 0} công việc</span></div>
+              <p><span>Hoàn thành <strong>{workItemBreakdown.main_tasks?.completed_tasks || 0}</strong></span><span>Quá hạn <strong>{workItemBreakdown.main_tasks?.overdue_tasks || 0}</strong></span><span>Tỷ lệ <strong>{workItemBreakdown.main_tasks?.completion_rate || 0}%</strong></span></p>
+            </article>
+            <article>
+              <div><strong>Subtask</strong><span>{workItemBreakdown.subtasks?.total_tasks || 0} công việc</span></div>
+              <p><span>Hoàn thành <strong>{workItemBreakdown.subtasks?.completed_tasks || 0}</strong></span><span>Quá hạn <strong>{workItemBreakdown.subtasks?.overdue_tasks || 0}</strong></span><span>Tỷ lệ <strong>{workItemBreakdown.subtasks?.completion_rate || 0}%</strong></span></p>
+            </article>
+          </section>
           <section className={styles.ratePanel}>
             <div><div><strong>Tỷ lệ hoàn thành</strong><span>{summary.completion_rate || 0}%</span></div><Progress percent={summary.completion_rate || 0} strokeColor="#206a37" showInfo={false} /></div>
             <div><div><strong>Hoàn thành đúng hạn</strong><span>{summary.on_time_rate || 0}%</span></div><Progress percent={summary.on_time_rate || 0} strokeColor="#3b82a0" showInfo={false} /></div>
@@ -244,7 +265,7 @@ export default function AdminReportsPage() {
               <section className={styles.panel}><div className={styles.panelTitle}><h2>Hiệu suất nhân viên</h2><span>{report.assignee_breakdown?.length || 0} nhân viên</span></div><Table rowKey="user_id" columns={assigneeColumns} dataSource={report.assignee_breakdown || []} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 620 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu nhân viên" /> }} /></section>
             </>
           )}
-          <section className={styles.panel}><div className={styles.panelTitle}><h2>Danh sách công việc</h2><span>{tasks.length} công việc</span></div><Table rowKey="id" columns={taskColumns} dataSource={tasks} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 950 }} locale={{ emptyText: <Empty description="Không có công việc trong kỳ" /> }} /></section>
+          <section className={styles.panel}><div className={styles.panelTitle}><h2>Danh sách công việc</h2><div className={styles.panelTools}><Segmented size="small" value={taskKind} onChange={setTaskKind} options={[{ value: 'ALL', label: 'Tất cả' }, { value: 'MAIN_TASK', label: 'Task chính' }, { value: 'SUBTASK', label: 'Subtask' }]} /><span>{filteredTasks.length} công việc</span></div></div><Table rowKey="id" columns={taskColumns} dataSource={filteredTasks} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 1160 }} locale={{ emptyText: <Empty description="Không có công việc phù hợp" /> }} /></section>
         </>
       ) : <Empty className={styles.emptyReport} description="Chọn điều kiện và xem báo cáo" />}
 

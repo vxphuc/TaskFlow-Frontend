@@ -83,3 +83,6 @@ export const downloadAttachmentApi = (attachmentId) =>
   axiosClient.get(`/api/attachments/${attachmentId}/download`, {
     responseType: 'blob',
   })
+
+export const deleteAttachmentApi = (attachmentId) =>
+  axiosClient.delete(`/api/attachments/${attachmentId}`)
