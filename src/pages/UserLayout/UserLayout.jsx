@@ -23,6 +23,7 @@ import {
   FiMenu,
   FiRepeat,
   FiSend,
+  FiUsers,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -41,6 +42,7 @@ const navigation = [
   { key: '/app', icon: <FiGrid />, label: 'Tổng quan' },
   { key: '/app/assigned', icon: <FiInbox />, label: 'Việc được giao' },
   { key: '/app/created', icon: <FiSend />, label: 'Việc tôi giao' },
+  { key: '/app/team', icon: <FiUsers />, label: 'Nhân sự cấp dưới' },
   { key: '/app/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
   { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
 ]
