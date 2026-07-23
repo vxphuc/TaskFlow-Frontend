@@ -39,6 +39,33 @@ import { useAuth } from '../../contexts/useAuth'
 import { getPriorityLabel, getStatusLabel, priorityOptions } from '../../utils/task'
 import styles from './UserRecurringPage.module.css'
 
+const frequencyOptions = [
+  { value: 'DAILY', label: 'Hằng ngày' },
+  { value: 'WEEKLY', label: 'Hằng tuần' },
+  { value: 'MONTHLY', label: 'Hằng tháng' },
+]
+
+const weekdayOptions = [
+  { value: 1, label: 'Thứ Hai' },
+  { value: 2, label: 'Thứ Ba' },
+  { value: 3, label: 'Thứ Tư' },
+  { value: 4, label: 'Thứ Năm' },
+  { value: 5, label: 'Thứ Sáu' },
+  { value: 6, label: 'Thứ Bảy' },
+  { value: 7, label: 'Chủ Nhật' },
+]
+
+const frequencyLabel = (frequency) =>
+  frequencyOptions.find((item) => item.value === frequency)?.label || frequency
+
+const scheduleLabel = (template) => {
+  if (template.frequency === 'DAILY') return 'Tạo mỗi ngày'
+  if (template.frequency === 'WEEKLY') {
+    return `Tạo vào ${weekdayOptions.find((item) => item.value === template.generate_day)?.label || ''}`
+  }
+  return `Tạo ngày ${template.generate_day} mỗi tháng`
+}
+
 export default function UserRecurringPage() {
   const { user } = useAuth()
   const [templateForm] = Form.useForm()
@@ -56,6 +83,7 @@ export default function UserRecurringPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [generateOpen, setGenerateOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const selectedFrequency = Form.useWatch('frequency', templateForm)
 
   const loadPage = useCallback(async () => {
     setLoading(true)
@@ -98,7 +126,12 @@ export default function UserRecurringPage() {
   const openCreate = () => {
     setEditingTemplate(null)
     templateForm.resetFields()
-    templateForm.setFieldsValue({ priority: 'MEDIUM', generate_day: 1, due_day: 5 })
+    templateForm.setFieldsValue({
+      priority: 'MEDIUM',
+      frequency: 'MONTHLY',
+      generate_day: 1,
+      due_after_days: 4,
+    })
     setFormOpen(true)
   }
 
@@ -108,8 +141,9 @@ export default function UserRecurringPage() {
       title: template.title,
       description: template.description,
       assigned_to: template.assigned_to,
+      frequency: template.frequency,
       generate_day: template.generate_day,
-      due_day: template.due_day,
+      due_after_days: template.due_after_days,
       priority: template.priority,
     })
     setFormOpen(true)
@@ -147,7 +181,7 @@ export default function UserRecurringPage() {
 
   const openGenerate = (template) => {
     setSelectedTemplate(template)
-    generateForm.setFieldsValue({ period: dayjs().startOf('month') })
+    generateForm.setFieldsValue({ period: dayjs() })
     setGenerateOpen(true)
   }
 
@@ -156,10 +190,9 @@ export default function UserRecurringPage() {
     try {
       await generateRecurringTaskApi({
         template_id: selectedTemplate.id,
-        year: period.year(),
-        month: period.month() + 1,
+        date: period.format('YYYY-MM-DD'),
       })
-      message.success(`Đã sinh task kỳ ${period.format('MM/YYYY')}.`)
+      message.success('Đã sinh task cho kỳ đã chọn.')
       setGenerateOpen(false)
       await loadPage()
     } catch (error) {
@@ -215,13 +248,13 @@ export default function UserRecurringPage() {
       render: (value) => usersById[value]?.full_name || 'Nhân sự hiện tại',
     },
     {
-      title: 'Lịch hàng tháng',
+      title: 'Chu kỳ',
       key: 'schedule',
-      width: 155,
+      width: 190,
       render: (_, row) => (
         <div className={styles.schedule}>
-          <span>Tạo ngày {row.generate_day}</span>
-          <small>Hạn ngày {row.due_day}</small>
+          <span>{frequencyLabel(row.frequency)}</span>
+          <small>{scheduleLabel(row)} · hạn sau {row.due_after_days} ngày</small>
         </div>
       ),
     },
@@ -258,7 +291,7 @@ export default function UserRecurringPage() {
                 <Tooltip title="Chỉnh sửa mẫu">
                   <Button type="text" icon={<FiEdit2 />} onClick={() => openEdit(row)} />
                 </Tooltip>
-                <Tooltip title="Sinh task theo tháng">
+                <Tooltip title="Sinh task cho một kỳ">
                   <Button
                     type="text"
                     icon={<FiPlay />}
@@ -288,8 +321,10 @@ export default function UserRecurringPage() {
     {
       title: 'Kỳ',
       key: 'period',
-      width: 100,
-      render: (_, row) => `${String(row.period_month).padStart(2, '0')}/${row.period_year}`,
+      width: 120,
+      render: (_, row) => row.period_date
+        ? dayjs(row.period_date).format('DD/MM/YYYY')
+        : `${String(row.period_month).padStart(2, '0')}/${row.period_year}`,
     },
     { title: 'Công việc', dataIndex: 'title', key: 'title' },
     {
@@ -314,7 +349,7 @@ export default function UserRecurringPage() {
         <div>
           <span>LẬP KẾ HOẠCH ĐỊNH KỲ</span>
           <h1>Task định kỳ</h1>
-          <p>Tạo mẫu công việc hàng tháng và quản lý các kỳ đã phát sinh.</p>
+          <p>Tạo công việc lặp lại hằng ngày, hằng tuần hoặc hằng tháng.</p>
         </div>
         <Button type="primary" icon={<FiPlus />} onClick={openCreate} disabled={!assignees.length}>
           Tạo mẫu
@@ -377,12 +412,47 @@ export default function UserRecurringPage() {
               }))}
             />
           </Form.Item>
+          <Form.Item
+            name="frequency"
+            label="Chu kỳ lặp lại"
+            rules={[{ required: true, message: 'Chọn chu kỳ lặp lại.' }]}
+          >
+            <Select
+              options={frequencyOptions}
+              onChange={() => templateForm.setFieldValue('generate_day', 1)}
+            />
+          </Form.Item>
           <div className={styles.formGrid}>
-            <Form.Item name="generate_day" label="Ngày tạo hàng tháng" rules={[{ required: true }]}>
-              <InputNumber min={1} max={31} className={styles.fullWidth} />
-            </Form.Item>
-            <Form.Item name="due_day" label="Ngày hết hạn" rules={[{ required: true }]}>
-              <InputNumber min={1} max={31} className={styles.fullWidth} />
+            {selectedFrequency === 'WEEKLY' && (
+              <Form.Item
+                name="generate_day"
+                label="Ngày tạo trong tuần"
+                rules={[{ required: true }]}
+              >
+                <Select options={weekdayOptions} />
+              </Form.Item>
+            )}
+            {selectedFrequency === 'MONTHLY' && (
+              <Form.Item
+                name="generate_day"
+                label="Ngày tạo trong tháng"
+                rules={[{ required: true }]}
+              >
+                <InputNumber min={1} max={31} className={styles.fullWidth} />
+              </Form.Item>
+            )}
+            <Form.Item
+              name="due_after_days"
+              label="Thời hạn hoàn thành"
+              extra="0 là hết hạn cuối ngày phát sinh."
+              rules={[{ required: true }]}
+            >
+              <InputNumber
+                min={0}
+                max={365}
+                suffix="ngày"
+                className={styles.fullWidth}
+              />
             </Form.Item>
           </div>
           <Form.Item name="priority" label="Mức ưu tiên">
@@ -404,9 +474,27 @@ export default function UserRecurringPage() {
       >
         <Form form={generateForm} layout="vertical" onFinish={generateTask}>
           <Form.Item name="period" label="Kỳ công việc" rules={[{ required: true }]}>
-            <DatePicker picker="month" format="MM/YYYY" className={styles.fullWidth} />
+            <DatePicker
+              picker={
+                selectedTemplate?.frequency === 'MONTHLY'
+                  ? 'month'
+                  : selectedTemplate?.frequency === 'WEEKLY'
+                    ? 'week'
+                    : 'date'
+              }
+              format={
+                selectedTemplate?.frequency === 'MONTHLY'
+                  ? 'MM/YYYY'
+                  : selectedTemplate?.frequency === 'WEEKLY'
+                    ? '[Tuần] wo/YYYY'
+                    : 'DD/MM/YYYY'
+              }
+              className={styles.fullWidth}
+            />
           </Form.Item>
-          <p className={styles.hint}>Mỗi mẫu chỉ sinh một task cho mỗi tháng.</p>
+          <p className={styles.hint}>
+            Mỗi mẫu chỉ sinh một task cho cùng một ngày phát sinh.
+          </p>
           <div className={styles.modalActions}>
             <Button onClick={() => setGenerateOpen(false)}>Đóng</Button>
             <Button type="primary" htmlType="submit" loading={submitting} icon={<FiCalendar />}>
@@ -427,7 +515,9 @@ export default function UserRecurringPage() {
             <span><FiCalendar /></span>
             <div>
               <strong>{selectedTemplate.title}</strong>
-              <small>Tạo ngày {selectedTemplate.generate_day} · Hạn ngày {selectedTemplate.due_day}</small>
+              <small>
+                {scheduleLabel(selectedTemplate)} · Hạn sau {selectedTemplate.due_after_days} ngày
+              </small>
             </div>
           </div>
         )}

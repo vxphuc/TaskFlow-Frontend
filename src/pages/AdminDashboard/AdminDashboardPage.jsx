@@ -73,7 +73,7 @@ export default function AdminDashboardPage() {
                 { title: 'Hệ thống cấp bậc', text: 'Thiết lập phân cấp linh hoạt cho từng phòng ban.', path: '/admin/positions', icon: <FiLayers /> },
                 { title: 'Danh sách nhân sự', text: 'Quản lý tài khoản, vị trí và người phụ trách.', path: '/admin/users', icon: <FiUsers /> },
                 { title: 'Báo cáo hiệu suất', text: 'Phân tích công việc theo phòng ban và nhân viên.', path: '/admin/reports', icon: <FiPieChart /> },
-                { title: 'Task định kỳ', text: 'Giám sát các mẫu và công việc được sinh hàng tháng.', path: '/admin/recurring', icon: <FiRepeat /> },
+                { title: 'Task định kỳ', text: 'Giám sát các mẫu và công việc được sinh theo nhiều chu kỳ.', path: '/admin/recurring', icon: <FiRepeat /> },
               ].map((item) => (
                 <button key={item.path} className={styles.quickItem} onClick={() => navigate(item.path)}>
                   <span>{item.icon}</span><div><strong>{item.title}</strong><small>{item.text}</small></div><FiArrowRight />

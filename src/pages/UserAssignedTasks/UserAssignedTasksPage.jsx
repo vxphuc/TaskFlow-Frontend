@@ -1,8 +1,11 @@
-import { Alert, Button, Empty, Select, Skeleton } from 'antd'
+import { Alert, Button, Empty, Segmented, Select, Skeleton, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiArrowRight, FiInbox, FiRefreshCw } from 'react-icons/fi'
+import { FiArrowRight, FiCornerDownRight, FiInbox, FiRefreshCw } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { getMyAssignedTasksApi } from '../../api/taskApi'
+import {
+  getMyAssignedSubtasksApi,
+  getMyAssignedTasksApi,
+} from '../../api/taskApi'
 import {
   formatDateTime,
   formatRelativeDeadline,
@@ -18,13 +21,26 @@ export default function UserAssignedTasksPage() {
   const [tasks, setTasks] = useState(null)
   const [status, setStatus] = useState()
   const [priority, setPriority] = useState()
+  const [taskKind, setTaskKind] = useState('ALL')
   const [error, setError] = useState('')
 
   const loadTasks = useCallback(async () => {
     setError('')
     try {
-      const response = await getMyAssignedTasksApi({ status, priority })
-      setTasks(response.data.tasks || [])
+      const [taskResponse, subtaskResponse] = await Promise.all([
+        getMyAssignedTasksApi({ status, priority }),
+        getMyAssignedSubtasksApi({ status, priority }),
+      ])
+      setTasks([
+        ...(taskResponse.data.tasks || []).map((task) => ({
+          ...task,
+          item_kind: 'TASK',
+        })),
+        ...(subtaskResponse.data.subtasks || []).map((task) => ({
+          ...task,
+          item_kind: 'SUBTASK',
+        })),
+      ].sort((left, right) => new Date(right.created_at) - new Date(left.created_at)))
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải danh sách công việc.')
     }
@@ -37,7 +53,15 @@ export default function UserAssignedTasksPage() {
   const counts = useMemo(() => ({
     all: tasks?.length || 0,
     active: tasks?.filter((task) => ['TODO', 'IN_PROGRESS', 'REJECTED'].includes(task.status)).length || 0,
+    subtasks: tasks?.filter((task) => task.item_kind === 'SUBTASK').length || 0,
   }), [tasks])
+
+  const visibleTasks = useMemo(
+    () => tasks?.filter(
+      (task) => taskKind === 'ALL' || task.item_kind === taskKind,
+    ) || [],
+    [taskKind, tasks],
+  )
 
   return (
     <div className={styles.page}>
@@ -51,8 +75,21 @@ export default function UserAssignedTasksPage() {
       </header>
 
       <section className={styles.toolbar}>
-        <div className={styles.summary}><FiInbox /><strong>{counts.active}</strong><span>việc cần xử lý</span></div>
+        <div className={styles.summary}>
+          <FiInbox />
+          <strong>{counts.active}</strong>
+          <span>việc cần xử lý · {counts.subtasks} subtask</span>
+        </div>
         <div className={styles.filters}>
+          <Segmented
+            value={taskKind}
+            onChange={setTaskKind}
+            options={[
+              { value: 'ALL', label: 'Tất cả' },
+              { value: 'TASK', label: 'Task chính' },
+              { value: 'SUBTASK', label: 'Subtask' },
+            ]}
+          />
           <Select
             allowClear
             placeholder="Tất cả trạng thái"
@@ -71,14 +108,14 @@ export default function UserAssignedTasksPage() {
       </section>
 
       {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
-      {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : tasks.length === 0 ? (
+      {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : visibleTasks.length === 0 ? (
         <section className={styles.empty}><Empty description="Không có công việc phù hợp" /></section>
       ) : (
         <section className={styles.taskList}>
           <div className={styles.listHeader}>
             <span>Công việc</span><span>Trạng thái</span><span>Deadline</span><span />
           </div>
-          {tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <button
               type="button"
               key={task.id}
@@ -87,7 +124,23 @@ export default function UserAssignedTasksPage() {
             >
               <span className={styles.taskMain}>
                 <span className={`${styles.priorityBar} ${styles[task.priority.toLowerCase()]}`} />
-                <span><strong>{task.title}</strong><small>{getPriorityLabel(task.priority)}</small></span>
+                <span>
+                  <strong>{task.title}</strong>
+                  <small className={styles.meta}>
+                    {task.item_kind === 'SUBTASK' ? (
+                      <>
+                        <Tag color="blue" bordered={false}>Subtask</Tag>
+                        <FiCornerDownRight />
+                        {task.parent_task_title || 'Task chính'}
+                      </>
+                    ) : (
+                      <>
+                        <Tag color="green" bordered={false}>Task chính</Tag>
+                        {getPriorityLabel(task.priority)}
+                      </>
+                    )}
+                  </small>
+                </span>
               </span>
               <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>
                 {getStatusLabel(task.status)}

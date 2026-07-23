@@ -3,6 +3,9 @@ import axiosClient from './axiosClient'
 export const getMyAssignedTasksApi = (params) =>
   axiosClient.get('/api/tasks/my-assigned', { params })
 
+export const getMyAssignedSubtasksApi = (params) =>
+  axiosClient.get('/api/subtasks/my-assigned', { params })
+
 export const getMyCreatedTasksApi = (params) =>
   axiosClient.get('/api/tasks/my-created', { params })
 

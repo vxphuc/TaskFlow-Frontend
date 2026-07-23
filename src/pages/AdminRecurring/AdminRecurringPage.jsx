@@ -24,6 +24,31 @@ const priorityMeta = {
   URGENT: ['Khẩn cấp', 'red'],
 }
 
+const frequencyMeta = {
+  DAILY: 'Hằng ngày',
+  WEEKLY: 'Hằng tuần',
+  MONTHLY: 'Hằng tháng',
+}
+
+const weekdayLabels = [
+  '',
+  'Thứ Hai',
+  'Thứ Ba',
+  'Thứ Tư',
+  'Thứ Năm',
+  'Thứ Sáu',
+  'Thứ Bảy',
+  'Chủ Nhật',
+]
+
+const scheduleLabel = (template) => {
+  if (template.frequency === 'DAILY') return 'Tạo mỗi ngày'
+  if (template.frequency === 'WEEKLY') {
+    return `Tạo ${weekdayLabels[template.generate_day]}`
+  }
+  return `Tạo ngày ${template.generate_day}`
+}
+
 export default function AdminRecurringPage() {
   const [templates, setTemplates] = useState([])
   const [departments, setDepartments] = useState([])
@@ -87,14 +112,14 @@ export default function AdminRecurringPage() {
     { title: 'Phòng ban', dataIndex: 'department_id', key: 'department', width: 180, render: (value) => departmentsById[value]?.name || 'Không xác định' },
     { title: 'Người giao', dataIndex: 'created_by', key: 'creator', width: 165, render: (value) => usersById[value]?.full_name || 'Không xác định' },
     { title: 'Người nhận', dataIndex: 'assigned_to', key: 'assignee', width: 165, render: (value) => usersById[value]?.full_name || 'Không xác định' },
-    { title: 'Lịch hàng tháng', key: 'schedule', width: 150, render: (_, row) => <div className={styles.schedule}><span>Tạo ngày {row.generate_day}</span><small>Hạn ngày {row.due_day}</small></div> },
+    { title: 'Chu kỳ', key: 'schedule', width: 180, render: (_, row) => <div className={styles.schedule}><span>{frequencyMeta[row.frequency] || row.frequency}</span><small>{scheduleLabel(row)} · hạn sau {row.due_after_days} ngày</small></div> },
     { title: 'Ưu tiên', dataIndex: 'priority', key: 'priority', width: 110, render: (value) => <Tag color={priorityMeta[value]?.[1]}>{priorityMeta[value]?.[0] || value}</Tag> },
     { title: 'Trạng thái', dataIndex: 'is_active', key: 'status', width: 125, render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Đang chạy' : 'Tạm ngưng'}</Tag> },
     { title: '', key: 'actions', fixed: 'right', width: 58, render: (_, row) => <Button type="text" icon={<FiEye />} onClick={() => viewGeneratedTasks(row)} aria-label="Xem task đã sinh" /> },
   ]
 
   const taskColumns = [
-    { title: 'Kỳ', key: 'period', width: 100, render: (_, row) => row.period_month && row.period_year ? `${String(row.period_month).padStart(2, '0')}/${row.period_year}` : '-' },
+    { title: 'Kỳ', key: 'period', width: 120, render: (_, row) => row.period_date ? dayjs(row.period_date).format('DD/MM/YYYY') : row.period_month && row.period_year ? `${String(row.period_month).padStart(2, '0')}/${row.period_year}` : '-' },
     { title: 'Công việc', dataIndex: 'title', key: 'title', render: (value) => <strong>{value}</strong> },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 145, render: (value) => <Tag color={statusMeta[value]?.[1]}>{statusMeta[value]?.[0] || value}</Tag> },
     { title: 'Thời hạn', dataIndex: 'due_date', key: 'due', width: 145, render: (value) => value ? dayjs(value).format('DD/MM/YYYY') : 'Chưa có' },
@@ -103,7 +128,7 @@ export default function AdminRecurringPage() {
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
-        <div><span>GIÁM SÁT HỆ THỐNG</span><h1>Task định kỳ</h1><p>Theo dõi các mẫu hàng tháng và lịch sử công việc được sinh tự động.</p></div>
+        <div><span>GIÁM SÁT HỆ THỐNG</span><h1>Task định kỳ</h1><p>Theo dõi các mẫu hằng ngày, hằng tuần, hằng tháng và lịch sử phát sinh.</p></div>
       </header>
 
       <section className={styles.panel}>
@@ -120,7 +145,7 @@ export default function AdminRecurringPage() {
         {selectedTemplate && (
           <div className={styles.drawerHeader}>
             <span><FiCalendar /></span>
-            <div><strong>{selectedTemplate.title}</strong><small>{departmentsById[selectedTemplate.department_id]?.name} · Tạo ngày {selectedTemplate.generate_day} hàng tháng</small></div>
+            <div><strong>{selectedTemplate.title}</strong><small>{departmentsById[selectedTemplate.department_id]?.name} · {scheduleLabel(selectedTemplate)}</small></div>
           </div>
         )}
         <Table rowKey="id" columns={taskColumns} dataSource={generatedTasks} loading={taskLoading} pagination={false} scroll={{ x: 620 }} locale={{ emptyText: <Empty description="Mẫu này chưa sinh công việc" /> }} />
