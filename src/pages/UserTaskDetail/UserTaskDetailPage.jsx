@@ -479,7 +479,12 @@ export default function UserTaskDetailPage() {
                       <div className={styles.commentList} ref={commentListRef}>
                         {comments.length === 0 ? <Empty description="Chưa có trao đổi" /> : comments.map((comment) => {
                           const mine = comment.user_id === user.id
-                          const author = mine ? 'Bạn' : comment.user_id === task.created_by ? 'Người giao việc' : 'Người thực hiện'
+                          const author = mine
+                            ? 'Bạn'
+                            : comment.author_name
+                              || (comment.user_id === task.created_by
+                                ? 'Người giao việc'
+                                : 'Người thực hiện')
                           return (
                             <article key={comment.id} className={`${styles.comment} ${mine ? styles.mine : ''}`}>
                               <Avatar size={34}>{author.charAt(0)}</Avatar>
@@ -490,9 +495,26 @@ export default function UserTaskDetailPage() {
                       </div>
                       <Form form={commentForm} className={styles.commentForm} onFinish={sendComment}>
                         <Form.Item name="content" rules={[{ required: true, message: 'Nhập nội dung trao đổi' }]}>
-                          <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} placeholder="Trao đổi về yêu cầu, kết quả hoặc deadline..." />
+                          <Input
+                            size="large"
+                            placeholder="Trao đổi về yêu cầu, kết quả hoặc deadline..."
+                            onPressEnter={(event) => {
+                              event.preventDefault()
+                              if (!event.nativeEvent.isComposing && !actionLoading) {
+                                commentForm.submit()
+                              }
+                            }}
+                          />
                         </Form.Item>
-                        <Button type="primary" htmlType="submit" icon={<FiMessageSquare />} loading={actionLoading}>Gửi trao đổi</Button>
+                        <Button
+                          type="primary"
+                          size="large"
+                          htmlType="submit"
+                          icon={<FiMessageSquare />}
+                          loading={actionLoading}
+                        >
+                          Gửi trao đổi
+                        </Button>
                       </Form>
                     </div>
                   ),
