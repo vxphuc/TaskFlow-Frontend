@@ -16,7 +16,7 @@ import {
   message,
 } from 'antd'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   FiArrowLeft,
   FiCalendar,
@@ -94,6 +94,8 @@ export default function UserTaskDetailPage() {
   const navigate = useNavigate()
   const [commentForm] = Form.useForm()
   const [actionForm] = Form.useForm()
+  const commentListRef = useRef(null)
+  const previousCommentCountRef = useRef(0)
   const [task, setTask] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [comments, setComments] = useState([])
@@ -141,6 +143,60 @@ export default function UserTaskDetailPage() {
   useEffect(() => {
     Promise.resolve().then(loadDetail)
   }, [loadDetail])
+
+  const refreshComments = useCallback(async () => {
+    if (document.visibilityState !== 'visible') return
+
+    try {
+      const response = await getTaskCommentsApi(taskId)
+      const nextComments = response.data.comments || []
+      setComments((currentComments) => {
+        const currentLastId = currentComments.at(-1)?.id
+        const nextLastId = nextComments.at(-1)?.id
+
+        if (
+          currentComments.length === nextComments.length
+          && currentLastId === nextLastId
+        ) {
+          return currentComments
+        }
+
+        return nextComments
+      })
+    } catch {
+      // The main detail loader keeps the user-facing error state.
+    }
+  }, [taskId])
+
+  useEffect(() => {
+    const intervalId = window.setInterval(refreshComments, 3000)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshComments()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [refreshComments])
+
+  useEffect(() => {
+    if (
+      comments.length > previousCommentCountRef.current
+      && commentListRef.current
+    ) {
+      commentListRef.current.scrollTo({
+        top: commentListRef.current.scrollHeight,
+        behavior: previousCommentCountRef.current === 0 ? 'auto' : 'smooth',
+      })
+    }
+
+    previousCommentCountRef.current = comments.length
+  }, [comments])
 
   useEffect(() => {
     if (!task || task.assigned_to !== user.id || task.parent_task_id) return
@@ -420,7 +476,7 @@ export default function UserTaskDetailPage() {
                   label: `Trao đổi (${comments.length})`,
                   children: (
                     <div className={styles.comments}>
-                      <div className={styles.commentList}>
+                      <div className={styles.commentList} ref={commentListRef}>
                         {comments.length === 0 ? <Empty description="Chưa có trao đổi" /> : comments.map((comment) => {
                           const mine = comment.user_id === user.id
                           const author = mine ? 'Bạn' : comment.user_id === task.created_by ? 'Người giao việc' : 'Người thực hiện'
