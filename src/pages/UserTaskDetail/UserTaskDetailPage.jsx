@@ -11,6 +11,9 @@ import {
   Skeleton,
   Tabs,
   Timeline,
+  Tooltip,
+  Upload,
+  message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -19,12 +22,15 @@ import {
   FiCalendar,
   FiCheck,
   FiClock,
+  FiDownload,
+  FiFile,
   FiMessageSquare,
   FiPlus,
   FiPlay,
   FiRotateCcw,
   FiSend,
   FiSlash,
+  FiUpload,
   FiX,
 } from 'react-icons/fi'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -33,6 +39,8 @@ import {
   cancelTaskApi,
   createSubtaskApi,
   createTaskCommentApi,
+  downloadAttachmentApi,
+  getTaskAttachmentsApi,
   getTaskCommentsApi,
   getTaskDetailApi,
   getTaskHistoryApi,
@@ -44,6 +52,8 @@ import {
   startTaskApi,
   submitTaskApi,
   updateTaskDeadlineApi,
+  uploadSubmissionAttachmentApi,
+  uploadTaskAttachmentApi,
   withdrawSubmissionApi,
 } from '../../api/taskApi'
 import { useAuth } from '../../contexts/useAuth'
@@ -57,6 +67,7 @@ import {
 import styles from './UserTaskDetailPage.module.css'
 
 const actionLabels = {
+  ATTACHMENT_UPLOADED: 'Đã tải file đính kèm',
   TASK_CREATED: 'Đã tạo công việc',
   TASK_STARTED: 'Đã bắt đầu thực hiện',
   TASK_SUBMITTED: 'Đã gửi kết quả',
@@ -70,6 +81,13 @@ const actionLabels = {
   SUBTASK_CREATED: 'Đã tạo công việc con',
 }
 
+const formatFileSize = (value) => {
+  if (!Number.isFinite(value)) return '-'
+  if (value < 1024) return `${value} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function UserTaskDetailPage() {
   const { taskId } = useParams()
   const { user } = useAuth()
@@ -81,27 +99,38 @@ export default function UserTaskDetailPage() {
   const [comments, setComments] = useState([])
   const [subtasks, setSubtasks] = useState([])
   const [history, setHistory] = useState([])
+  const [attachments, setAttachments] = useState([])
   const [assignees, setAssignees] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [actionModal, setActionModal] = useState(null)
 
   const loadDetail = useCallback(async () => {
     setError('')
     try {
-      const [taskRes, submissionsRes, commentsRes, subtasksRes, historyRes] = await Promise.all([
+      const [
+        taskRes,
+        submissionsRes,
+        commentsRes,
+        subtasksRes,
+        historyRes,
+        attachmentRes,
+      ] = await Promise.all([
         getTaskDetailApi(taskId),
         getTaskSubmissionsApi(taskId),
         getTaskCommentsApi(taskId),
         getTaskSubtasksApi(taskId),
         getTaskHistoryApi(taskId),
+        getTaskAttachmentsApi(taskId),
       ])
       setTask(taskRes.data.task)
       setSubmissions(submissionsRes.data.submissions || [])
       setComments(commentsRes.data.comments || [])
       setSubtasks(subtasksRes.data.subtasks || [])
       setHistory(historyRes.data.logs || [])
+      setAttachments(attachmentRes.data.attachments || [])
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải chi tiết công việc.')
     } finally {
@@ -174,6 +203,46 @@ export default function UserTaskDetailPage() {
   const sendComment = async ({ content }) => {
     await runAction(() => createTaskCommentApi(taskId, { content }))
     commentForm.resetFields()
+  }
+
+  const uploadAttachment = async (file, submissionId = null) => {
+    const loadingKey = submissionId || 'task'
+    setAttachmentLoading(loadingKey)
+    setError('')
+    try {
+      if (submissionId) {
+        await uploadSubmissionAttachmentApi(submissionId, file)
+      } else {
+        await uploadTaskAttachmentApi(taskId, file)
+      }
+      message.success('Đã tải file lên.')
+      await loadDetail()
+    } catch (uploadError) {
+      setError(uploadError.response?.data?.message || 'Không thể tải file lên.')
+    } finally {
+      setAttachmentLoading(null)
+    }
+    return false
+  }
+
+  const downloadAttachment = async (attachment) => {
+    setAttachmentLoading(attachment.id)
+    setError('')
+    try {
+      const response = await downloadAttachmentApi(attachment.id)
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = attachment.file_name
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (downloadError) {
+      setError(downloadError.response?.data?.message || 'Không thể tải file xuống.')
+    } finally {
+      setAttachmentLoading(null)
+    }
   }
 
   const actions = useMemo(() => {
@@ -263,8 +332,86 @@ export default function UserTaskDetailPage() {
                           </div>
                           <p>{submission.content}</p>
                           {submission.withdrawal_reason && <small>Lý do thu hồi: {submission.withdrawal_reason}</small>}
+                          {!submission.is_withdrawn && (
+                            <Upload
+                              showUploadList={false}
+                              beforeUpload={(file) => uploadAttachment(file, submission.id)}
+                            >
+                              <Button
+                                size="small"
+                                icon={<FiUpload />}
+                                loading={attachmentLoading === submission.id}
+                                className={styles.submissionUpload}
+                              >
+                                Đính kèm vào lần gửi
+                              </Button>
+                            </Upload>
+                          )}
                         </article>
                       ))}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'attachments',
+                  label: `Tệp đính kèm (${attachments.length})`,
+                  children: (
+                    <div className={styles.attachments}>
+                      <div className={styles.attachmentToolbar}>
+                        <div>
+                          <strong>Tài liệu công việc</strong>
+                          <span>PDF, Word, Excel, ảnh, TXT hoặc ZIP · tối đa 10 MB</span>
+                        </div>
+                        <Upload
+                          showUploadList={false}
+                          beforeUpload={(file) => uploadAttachment(file)}
+                        >
+                          <Button
+                            type="primary"
+                            icon={<FiUpload />}
+                            loading={attachmentLoading === 'task'}
+                          >
+                            Tải file lên
+                          </Button>
+                        </Upload>
+                      </div>
+                      {attachments.length === 0 ? (
+                        <Empty description="Chưa có file đính kèm" />
+                      ) : (
+                        <div className={styles.attachmentList}>
+                          {attachments.map((attachment) => {
+                            const submission = submissions.find(
+                              (item) => item.id === attachment.submission_id,
+                            )
+                            return (
+                              <article key={attachment.id} className={styles.attachment}>
+                                <span className={styles.fileIcon}><FiFile /></span>
+                                <span className={styles.fileInfo}>
+                                  <strong>{attachment.file_name}</strong>
+                                  <small>
+                                    {submission
+                                      ? `Kết quả lần #${submission.attempt_number}`
+                                      : 'Tài liệu chung của task'}
+                                    {' · '}
+                                    {formatFileSize(attachment.file_size)}
+                                    {' · '}
+                                    {formatDateTime(attachment.created_at)}
+                                  </small>
+                                </span>
+                                <Tooltip title="Tải xuống">
+                                  <Button
+                                    type="text"
+                                    icon={<FiDownload />}
+                                    loading={attachmentLoading === attachment.id}
+                                    onClick={() => downloadAttachment(attachment)}
+                                    aria-label={`Tải ${attachment.file_name}`}
+                                  />
+                                </Tooltip>
+                              </article>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   ),
                 },

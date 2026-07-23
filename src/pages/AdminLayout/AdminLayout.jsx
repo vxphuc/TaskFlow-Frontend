@@ -5,6 +5,7 @@ import {
   FiBriefcase,
   FiChevronDown,
   FiLayers,
+  FiKey,
   FiLogOut,
   FiMenu,
   FiPieChart,
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/useAuth'
+import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './AdminLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -42,6 +44,7 @@ export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
 
   const selectedKey = useMemo(() => {
     const match = [...navigation]
@@ -56,6 +59,12 @@ export default function AdminLayout() {
   }))
 
   const accountItems = [
+    {
+      key: 'change-password',
+      icon: <FiKey />,
+      label: 'Đổi mật khẩu',
+      onClick: () => setPasswordOpen(true),
+    },
     {
       key: 'logout',
       icon: <FiLogOut />,
@@ -131,6 +140,7 @@ export default function AdminLayout() {
         <div className={styles.navLabel}>QUẢN TRỊ HỆ THỐNG</div>
         {navMenu}
       </Drawer>
+      <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
     </Layout>
   )
 }

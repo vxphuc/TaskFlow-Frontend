@@ -56,3 +56,27 @@ export const updateTaskDeadlineApi = (taskId, data) =>
 
 export const cancelTaskApi = (taskId, data) =>
   axiosClient.patch(`/api/tasks/${taskId}/cancel`, data)
+
+export const getTaskAttachmentsApi = (taskId) =>
+  axiosClient.get(`/api/tasks/${taskId}/attachments`)
+
+export const uploadTaskAttachmentApi = (taskId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return axiosClient.post(`/api/tasks/${taskId}/attachments`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export const uploadSubmissionAttachmentApi = (submissionId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return axiosClient.post(`/api/submissions/${submissionId}/attachments`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export const downloadAttachmentApi = (attachmentId) =>
+  axiosClient.get(`/api/attachments/${attachmentId}/download`, {
+    responseType: 'blob',
+  })

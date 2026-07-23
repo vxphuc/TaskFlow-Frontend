@@ -18,8 +18,10 @@ import {
   FiClipboard,
   FiGrid,
   FiInbox,
+  FiKey,
   FiLogOut,
   FiMenu,
+  FiRepeat,
   FiSend,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -30,6 +32,7 @@ import {
 } from '../../api/notificationApi'
 import { useAuth } from '../../contexts/useAuth'
 import { formatDateTime } from '../../utils/task'
+import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './UserLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -38,6 +41,7 @@ const navigation = [
   { key: '/app', icon: <FiGrid />, label: 'Tổng quan' },
   { key: '/app/assigned', icon: <FiInbox />, label: 'Việc được giao' },
   { key: '/app/created', icon: <FiSend />, label: 'Việc tôi giao' },
+  { key: '/app/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
   { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
 ]
 
@@ -56,6 +60,7 @@ export default function UserLayout() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [notificationOpen, setNotificationOpen] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationLoading, setNotificationLoading] = useState(false)
 
@@ -118,12 +123,20 @@ export default function UserLayout() {
     />
   )
 
-  const accountItems = [{
-    key: 'logout',
-    icon: <FiLogOut />,
-    label: 'Đăng xuất',
-    onClick: logout,
-  }]
+  const accountItems = [
+    {
+      key: 'change-password',
+      icon: <FiKey />,
+      label: 'Đổi mật khẩu',
+      onClick: () => setPasswordOpen(true),
+    },
+    {
+      key: 'logout',
+      icon: <FiLogOut />,
+      label: 'Đăng xuất',
+      onClick: logout,
+    },
+  ]
 
   return (
     <Layout className={styles.shell}>
@@ -219,6 +232,7 @@ export default function UserLayout() {
           </div>
         )}
       </Drawer>
+      <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
     </Layout>
   )
 }
