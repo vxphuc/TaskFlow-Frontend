@@ -1,0 +1,68 @@
+:root {
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+  color: #17211a;
+  background: #f4f7f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --brand: #206a37;
+  --brand-dark: #174d29;
+  --brand-soft: #eaf4ed;
+  --surface: #ffffff;
+  --border: #dfe7e1;
+  --muted: #66756b;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, textarea, select { font: inherit; }
+#root { min-height: 100vh; }
+
+.appLoading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: var(--muted);
+  background: #f4f7f4;
+}
+
+.accessNotice {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  background: #f4f7f4;
+}
+
+.accessNotice span { color: var(--brand); font-weight: 800; }
+.accessNotice h1 { margin: 12px 0 8px; font-size: 24px; }
+.accessNotice p { margin: 0; color: var(--muted); }
+.accessNotice button { margin-top: 20px; }
+
+.ant-btn { box-shadow: none; }
+.ant-btn-primary {
+  color: #fff !important;
+  background: #206a37 !important;
+  border-color: #206a37 !important;
+}
+.ant-btn-primary:not(:disabled):hover,
+.ant-btn-primary:not(:disabled):focus-visible {
+  color: #fff !important;
+  background: #174d29 !important;
+  border-color: #174d29 !important;
+}
+.ant-btn-primary:disabled {
+  color: rgba(255, 255, 255, .72) !important;
+  background: #7da58a !important;
+  border-color: #7da58a !important;
+}
+.ant-table-wrapper .ant-table-cell { vertical-align: middle; }
+.ant-modal .ant-modal-title { font-size: 18px; }
+
+@media (max-width: 767px) {
+  .ant-modal { max-width: calc(100vw - 24px); margin: 12px auto; }
+  .ant-modal .ant-modal-content { padding: 18px; }
+}

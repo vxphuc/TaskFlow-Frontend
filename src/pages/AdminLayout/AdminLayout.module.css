@@ -1,0 +1,76 @@
+.shell { 
+  min-height: 100vh; 
+  background: #f4f7f4; 
+}
+.sider { 
+  position: fixed !important; 
+  inset: 0 auto 0 0; 
+  z-index: 20; 
+  background: #173f25 !important; 
+}
+.brand { 
+  height: 72px; 
+  display: flex; 
+  align-items: center; 
+  gap: 11px; 
+  padding: 0 22px; 
+  color: #fff; 
+  text-decoration: none; 
+}
+.brandMark { 
+  position: relative; 
+  width: 42px; 
+  height: 42px; 
+  flex: 0 0 38px; 
+  overflow: hidden; 
+  border-radius: 50%; 
+  background: #fff; 
+}
+.brandMark img { 
+  position: absolute; 
+  width: 48px; 
+  max-width: none; 
+  height: auto; 
+  left: -5px; 
+  top: -4px; 
+  display: block; 
+}
+.brandName { font-size: 21px; font-weight: 750; letter-spacing: 0; }
+.navLabel { padding: 18px 22px 8px; color: rgba(255,255,255,.52); font-size: 11px; font-weight: 700; }
+.menu { padding: 4px 10px; color: rgba(255,255,255,.78); background: transparent !important; border: 0 !important; }
+.menu :global(.ant-menu-item) { height: 44px; margin: 4px 0; border-radius: 6px; color: rgba(255,255,255,.78); }
+.menu :global(.ant-menu-item a) { color: inherit; }
+.menu :global(.ant-menu-item-selected) { color: #fff !important; background: #206a37 !important; }
+.menu :global(.ant-menu-item:hover) { color: #fff !important; background: rgba(255,255,255,.09) !important; }
+.siderFooter { position: absolute; bottom: 20px; left: 22px; color: rgba(255,255,255,.42); font-size: 12px; }
+.header { position: sticky; top: 0; z-index: 15; height: 72px; margin-left: 244px; display: flex; align-items: center; gap: 12px; padding: 0 28px; line-height: normal; background: rgba(255,255,255,.96); border-bottom: 1px solid #dfe7e1; }
+.headerTitle { flex: 1; color: #405047; font-size: 15px; font-weight: 650; }
+.menuButton { display: none; font-size: 20px; }
+.account { min-width: 208px; height: 52px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 0; border-radius: 6px; color: #26372c; background: transparent; cursor: pointer; text-align: left; white-space: nowrap; }
+.account:hover { background: #f1f6f2; }
+.avatar { color: #fff !important; background: #206a37 !important; font-weight: 700; padding-bottom: 6px;}
+.accountText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; line-height: 1.2; }
+.accountText strong { max-width: 150px; overflow: hidden; font-size: 14px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.accountText small { color: #78867d; font-size: 11px; line-height: 14px; }
+.accountDropdown :global(.ant-dropdown-menu) { min-width: 180px; padding: 6px; border: 1px solid #dfe7e1; box-shadow: 0 10px 28px rgba(23, 63, 37, .14); }
+.accountDropdown :global(.ant-dropdown-menu-item) { min-height: 38px; }
+.content { min-width: 0; margin-left: 244px; padding: 28px; }
+.mobileDrawer :global(.ant-drawer-body) { padding: 0; background: #173f25; }
+
+@media (max-width: 900px) {
+  .sider { display: none; }
+  .header, .content { margin-left: 0; }
+  .menuButton { display: inline-flex; }
+  .header { height: 64px; padding: 0 16px; }
+  .content { padding: 20px 16px; }
+}
+
+@media (max-width: 520px) {
+  .headerTitle { display: none; }
+  .menuButton { margin-right: auto; }
+  .accountText { min-width: 0; max-width: 135px; }
+  .accountText small { display: none; }
+  .account { min-width: 0; height: 46px; padding: 4px 6px; }
+  .accountText strong { max-width: 110px; }
+  .content { padding: 16px 12px; }
+}
