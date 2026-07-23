@@ -7,6 +7,7 @@ import {
   Form,
   Input,
   Modal,
+  Select,
   Skeleton,
   Tabs,
   Timeline,
@@ -19,6 +20,7 @@ import {
   FiCheck,
   FiClock,
   FiMessageSquare,
+  FiPlus,
   FiPlay,
   FiRotateCcw,
   FiSend,
@@ -29,12 +31,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   approveSubmissionApi,
   cancelTaskApi,
+  createSubtaskApi,
   createTaskCommentApi,
   getTaskCommentsApi,
   getTaskDetailApi,
   getTaskHistoryApi,
   getTaskSubmissionsApi,
   getTaskSubtasksApi,
+  getSubtaskAssigneesApi,
   rejectSubmissionApi,
   startSubmissionReviewApi,
   startTaskApi,
@@ -48,6 +52,7 @@ import {
   getPriorityLabel,
   getStatusLabel,
   isTaskOpen,
+  priorityOptions,
 } from '../../utils/task'
 import styles from './UserTaskDetailPage.module.css'
 
@@ -76,6 +81,7 @@ export default function UserTaskDetailPage() {
   const [comments, setComments] = useState([])
   const [subtasks, setSubtasks] = useState([])
   const [history, setHistory] = useState([])
+  const [assignees, setAssignees] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -106,6 +112,15 @@ export default function UserTaskDetailPage() {
   useEffect(() => {
     Promise.resolve().then(loadDetail)
   }, [loadDetail])
+
+  useEffect(() => {
+    if (!task || task.assigned_to !== user.id || task.parent_task_id) return
+
+    Promise.resolve()
+      .then(() => getSubtaskAssigneesApi(taskId))
+      .then((response) => setAssignees(response.data.users || []))
+      .catch(() => setAssignees([]))
+  }, [task, taskId, user.id])
 
   const isAssignee = task?.assigned_to === user.id
   const isCreator = task?.created_by === user.id
@@ -145,6 +160,15 @@ export default function UserTaskDetailPage() {
     if (actionModal === 'cancel') {
       return runAction(() => cancelTaskApi(taskId, { reason: values.reason }))
     }
+    if (actionModal === 'subtask') {
+      return runAction(() => createSubtaskApi(taskId, {
+        title: values.title,
+        description: values.description,
+        assigned_to: values.assigned_to,
+        priority: values.priority,
+        due_date: values.due_date?.toISOString(),
+      }))
+    }
   }
 
   const sendComment = async ({ content }) => {
@@ -160,6 +184,9 @@ export default function UserTaskDetailPage() {
     }
     if (isAssignee && ['IN_PROGRESS', 'REJECTED'].includes(task.status)) {
       items.push({ key: 'submit', label: 'Gửi kết quả', icon: <FiSend />, primary: true, modal: 'submit' })
+    }
+    if (isAssignee && !task.parent_task_id && isTaskOpen(task.status)) {
+      items.push({ key: 'subtask', label: 'Tạo subtask', icon: <FiPlus />, modal: 'subtask' })
     }
     if (isAssignee && task.status === 'SUBMITTED' && latestSubmission && !latestSubmission.is_withdrawn) {
       items.push({ key: 'withdraw', label: 'Thu hồi kết quả', icon: <FiRotateCcw />, modal: 'withdraw' })
@@ -309,6 +336,7 @@ export default function UserTaskDetailPage() {
           reject: 'Yêu cầu làm lại',
           deadline: 'Thay đổi deadline',
           cancel: 'Hủy công việc',
+          subtask: 'Tạo công việc con',
         }[actionModal]}
         open={Boolean(actionModal)}
         onCancel={() => { setActionModal(null); actionForm.resetFields() }}
@@ -335,9 +363,44 @@ export default function UserTaskDetailPage() {
               <DatePicker showTime format="DD/MM/YYYY HH:mm" className={styles.fullWidth} />
             </Form.Item>
           )}
+          {actionModal === 'subtask' && (
+            <>
+              <Form.Item name="title" label="Tiêu đề" rules={[{ required: true, message: 'Nhập tiêu đề subtask' }, { max: 200 }]}>
+                <Input placeholder="Ví dụ: Tổng hợp dữ liệu đầu vào" />
+              </Form.Item>
+              <Form.Item name="description" label="Mô tả">
+                <Input.TextArea rows={3} placeholder="Yêu cầu và kết quả mong đợi" />
+              </Form.Item>
+              <Form.Item name="assigned_to" label="Người thực hiện" rules={[{ required: true, message: 'Chọn người thực hiện' }]}>
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={assignees.length ? 'Chọn nhân sự' : 'Không có nhân sự phù hợp'}
+                  options={assignees.map((item) => ({
+                    value: item.id,
+                    label: `${item.full_name} · ${item.phone}`,
+                  }))}
+                />
+              </Form.Item>
+              <div className={styles.formGrid}>
+                <Form.Item name="priority" label="Ưu tiên" initialValue="MEDIUM">
+                  <Select options={priorityOptions} />
+                </Form.Item>
+                <Form.Item name="due_date" label="Deadline">
+                  <DatePicker showTime format="DD/MM/YYYY HH:mm" className={styles.fullWidth} />
+                </Form.Item>
+              </div>
+            </>
+          )}
           <div className={styles.modalActions}>
             <Button onClick={() => setActionModal(null)}>Đóng</Button>
-            <Button type="primary" danger={['reject', 'cancel'].includes(actionModal)} htmlType="submit" loading={actionLoading}>
+            <Button
+              type="primary"
+              danger={['reject', 'cancel'].includes(actionModal)}
+              htmlType="submit"
+              loading={actionLoading}
+              disabled={actionModal === 'subtask' && !assignees.length}
+            >
               Xác nhận
             </Button>
           </div>

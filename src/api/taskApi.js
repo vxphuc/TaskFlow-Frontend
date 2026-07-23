@@ -18,6 +18,12 @@ export const startTaskApi = (taskId) =>
 export const getTaskSubtasksApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}/subtasks`)
 
+export const createSubtaskApi = (taskId, data) =>
+  axiosClient.post(`/api/tasks/${taskId}/subtasks`, data)
+
+export const getSubtaskAssigneesApi = (taskId) =>
+  axiosClient.get(`/api/tasks/${taskId}/subtask-assignees`)
+
 export const submitTaskApi = (taskId, data) =>
   axiosClient.post(`/api/tasks/${taskId}/submissions`, data)
 

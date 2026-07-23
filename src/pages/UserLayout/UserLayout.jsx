@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiBell,
+  FiBarChart2,
   FiChevronDown,
   FiClipboard,
   FiGrid,
@@ -37,6 +38,7 @@ const navigation = [
   { key: '/app', icon: <FiGrid />, label: 'Tổng quan' },
   { key: '/app/assigned', icon: <FiInbox />, label: 'Việc được giao' },
   { key: '/app/created', icon: <FiSend />, label: 'Việc tôi giao' },
+  { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
 ]
 
 function Brand() {
