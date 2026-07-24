@@ -59,11 +59,13 @@ const frequencyLabel = (frequency) =>
   frequencyOptions.find((item) => item.value === frequency)?.label || frequency
 
 const scheduleLabel = (template) => {
+  if (!template) return 'Chưa có lịch'
   if (template.frequency === 'DAILY') return 'Tạo mỗi ngày'
   if (template.frequency === 'WEEKLY') {
-    return `Tạo vào ${weekdayOptions.find((item) => item.value === template.generate_day)?.label || ''}`
+    const generateDay = Number(template.generate_day)
+    return `Tạo vào ${weekdayOptions.find((item) => item.value === generateDay)?.label || 'ngày đã chọn'}`
   }
-  return `Tạo ngày ${template.generate_day} mỗi tháng`
+  return `Tạo ngày ${template.generate_day || 1} mỗi tháng`
 }
 
 export default function UserRecurringPage() {
@@ -92,8 +94,16 @@ export default function UserRecurringPage() {
         getRecurringTemplatesApi(),
         getUsersApi({ is_active: true }),
       ])
-      setTemplates(templateResponse.data.templates || [])
-      setAssignees(userResponse.data.users || [])
+      setTemplates(
+        Array.isArray(templateResponse.data.templates)
+          ? templateResponse.data.templates
+          : [],
+      )
+      setAssignees(
+        Array.isArray(userResponse.data.users)
+          ? userResponse.data.users
+          : [],
+      )
     } catch (error) {
       message.error(error.response?.data?.message || 'Không thể tải danh sách task định kỳ.')
     } finally {
@@ -117,7 +127,7 @@ export default function UserRecurringPage() {
     const keyword = search.trim().toLocaleLowerCase('vi')
     return templates.filter((item) => {
       const matchesKeyword = !keyword
-        || item.title.toLocaleLowerCase('vi').includes(keyword)
+        || String(item.title || '').toLocaleLowerCase('vi').includes(keyword)
       const matchesStatus = status === undefined || item.is_active === status
       return matchesKeyword && matchesStatus
     })

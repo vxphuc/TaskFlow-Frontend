@@ -1,0 +1,60 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: #f3f6f4;
+}
+
+.panel {
+  width: min(480px, 100%);
+  display: grid;
+  justify-items: start;
+  padding: 28px;
+  border: 1px solid #dce6df;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(22, 63, 37, .1);
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  margin-bottom: 16px;
+  place-items: center;
+  border-radius: 6px;
+  color: #a06317;
+  background: #fff4df;
+  font-size: 21px;
+}
+
+.panel h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.panel p {
+  margin: 0 0 22px;
+  color: #647269;
+  line-height: 1.6;
+}
+
+.panel button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  background: #206a37;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+.panel button:hover {
+  background: #18572d;
+}

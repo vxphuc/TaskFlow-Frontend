@@ -1,26 +1,72 @@
 import { Spin } from 'antd'
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './contexts/useAuth'
 import AdminLayout from './pages/AdminLayout/AdminLayout'
 import LoginPage from './pages/login/LoginPage'
 import UserLayout from './pages/UserLayout/UserLayout'
+import { lazyWithRetry } from './utils/lazyWithRetry'
 
-const AdminDashboardPage = lazy(() => import('./pages/AdminDashboard/AdminDashboardPage'))
-const AdminRecurringPage = lazy(() => import('./pages/AdminRecurring/AdminRecurringPage'))
-const AdminReportsPage = lazy(() => import('./pages/AdminReports/AdminReportsPage'))
-const DepartmentsPage = lazy(() => import('./pages/Departments/DepartmentsPage'))
-const PositionsPage = lazy(() => import('./pages/Positions/PositionsPage'))
-const UsersPage = lazy(() => import('./pages/Users/UsersPage'))
-const UserDashboardPage = lazy(() => import('./pages/UserDashboard/UserDashboardPage'))
-const UserAssignedTasksPage = lazy(() => import('./pages/UserAssignedTasks/UserAssignedTasksPage'))
-const UserCreatedTasksPage = lazy(() => import('./pages/UserCreatedTasks/UserCreatedTasksPage'))
-const UserGuidePage = lazy(() => import('./pages/UserGuide/UserGuidePage'))
-const UserTaskDetailPage = lazy(() => import('./pages/UserTaskDetail/UserTaskDetailPage'))
-const UserReportsPage = lazy(() => import('./pages/UserReports/UserReportsPage'))
-const UserRecurringPage = lazy(() => import('./pages/UserRecurring/UserRecurringPage'))
-const UserTeamPage = lazy(() => import('./pages/UserTeam/UserTeamPage'))
-const InitiativesPage = lazy(() => import('./pages/Initiatives/InitiativesPage'))
+const AdminDashboardPage = lazyWithRetry(
+  () => import('./pages/AdminDashboard/AdminDashboardPage'),
+  'admin-dashboard',
+)
+const AdminRecurringPage = lazyWithRetry(
+  () => import('./pages/AdminRecurring/AdminRecurringPage'),
+  'admin-recurring',
+)
+const AdminReportsPage = lazyWithRetry(
+  () => import('./pages/AdminReports/AdminReportsPage'),
+  'admin-reports',
+)
+const DepartmentsPage = lazyWithRetry(
+  () => import('./pages/Departments/DepartmentsPage'),
+  'departments',
+)
+const PositionsPage = lazyWithRetry(
+  () => import('./pages/Positions/PositionsPage'),
+  'positions',
+)
+const UsersPage = lazyWithRetry(
+  () => import('./pages/Users/UsersPage'),
+  'users',
+)
+const UserDashboardPage = lazyWithRetry(
+  () => import('./pages/UserDashboard/UserDashboardPage'),
+  'user-dashboard',
+)
+const UserAssignedTasksPage = lazyWithRetry(
+  () => import('./pages/UserAssignedTasks/UserAssignedTasksPage'),
+  'user-assigned-tasks',
+)
+const UserCreatedTasksPage = lazyWithRetry(
+  () => import('./pages/UserCreatedTasks/UserCreatedTasksPage'),
+  'user-created-tasks',
+)
+const UserGuidePage = lazyWithRetry(
+  () => import('./pages/UserGuide/UserGuidePage'),
+  'user-guide',
+)
+const UserTaskDetailPage = lazyWithRetry(
+  () => import('./pages/UserTaskDetail/UserTaskDetailPage'),
+  'user-task-detail',
+)
+const UserReportsPage = lazyWithRetry(
+  () => import('./pages/UserReports/UserReportsPage'),
+  'user-reports',
+)
+const UserRecurringPage = lazyWithRetry(
+  () => import('./pages/UserRecurring/UserRecurringPage'),
+  'user-recurring',
+)
+const UserTeamPage = lazyWithRetry(
+  () => import('./pages/UserTeam/UserTeamPage'),
+  'user-team',
+)
+const InitiativesPage = lazyWithRetry(
+  () => import('./pages/Initiatives/InitiativesPage'),
+  'initiatives',
+)
 
 function App() {
   const { user, loading } = useAuth()

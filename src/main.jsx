@@ -4,6 +4,7 @@ import { ConfigProvider } from 'antd'
 import viVN from 'antd/locale/vi_VN'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import AppErrorBoundary from './components/AppErrorBoundary/AppErrorBoundary.jsx'
 import './index.css'
 import App from './App.jsx'
 
@@ -21,9 +22,11 @@ createRoot(document.getElementById('root')).render(
       }}
     >
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <AppErrorBoundary>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </AppErrorBoundary>
       </BrowserRouter>
     </ConfigProvider>
   </StrictMode>,

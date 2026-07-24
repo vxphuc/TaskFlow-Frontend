@@ -41,11 +41,31 @@ export function AuthProvider({ children }) {
 
     if (user && token) {
       connectRealtime(token)
-    } else {
-      disconnectRealtime()
+
+      const reconnectWhenAvailable = () => {
+        if (
+          navigator.onLine
+          && document.visibilityState === 'visible'
+        ) {
+          connectRealtime(token)
+        }
+      }
+
+      window.addEventListener('online', reconnectWhenAvailable)
+      document.addEventListener('visibilitychange', reconnectWhenAvailable)
+
+      return () => {
+        window.removeEventListener('online', reconnectWhenAvailable)
+        document.removeEventListener(
+          'visibilitychange',
+          reconnectWhenAvailable,
+        )
+        disconnectRealtime()
+      }
     }
 
-    return disconnectRealtime
+    disconnectRealtime()
+    return undefined
   }, [user])
 
   useEffect(() => {
