@@ -24,6 +24,8 @@ import {
   FiRepeat,
   FiSend,
   FiUsers,
+  FiWifi,
+  FiWifiOff,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -33,6 +35,7 @@ import {
 } from '../../api/notificationApi'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
+import { useRealtimeStatus } from '../../hooks/useRealtimeStatus'
 import { formatDateTime } from '../../utils/task'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './UserLayout.module.css'
@@ -66,6 +69,7 @@ export default function UserLayout() {
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationLoading, setNotificationLoading] = useState(false)
+  const realtimeStatus = useRealtimeStatus()
 
   const selectedKey = useMemo(() => {
     const match = [...navigation]
@@ -167,6 +171,26 @@ export default function UserLayout() {
             />
           </Tooltip>
           <div className={styles.headerTitle}>Không gian công việc</div>
+          <Tooltip
+            title={
+              realtimeStatus === 'connected'
+                ? 'Đồng bộ thời gian thực đang hoạt động'
+                : 'Mất kết nối thời gian thực - đang dùng đồng bộ dự phòng'
+            }
+          >
+            <span
+              className={`${styles.realtimeStatus} ${
+                realtimeStatus === 'connected' ? styles.connected : styles.offline
+              }`}
+              aria-label={
+                realtimeStatus === 'connected'
+                  ? 'Đã kết nối thời gian thực'
+                  : 'Chưa kết nối thời gian thực'
+              }
+            >
+              {realtimeStatus === 'connected' ? <FiWifi /> : <FiWifiOff />}
+            </span>
+          </Tooltip>
           <Tooltip title="Thông báo">
             <Badge count={unreadCount} size="small">
               <Button

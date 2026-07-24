@@ -14,6 +14,9 @@
 .header { position: sticky; top: 0; z-index: 15; height: 72px; margin-left: 244px; display: flex; align-items: center; gap: 14px; padding: 0 28px; line-height: normal; background: rgba(255,255,255,.97); border-bottom: 1px solid #dfe7e1; }
 .headerTitle { flex: 1; color: #405047; font-size: 15px; font-weight: 650; }
 .menuButton { display: none; font-size: 20px; }
+.realtimeStatus { width: 36px; height: 36px; display: grid; flex: 0 0 36px; place-items: center; border-radius: 50%; font-size: 17px; }
+.connected { color: #206a37; background: #edf7f0; }
+.offline { color: #a06317; background: #fff6e7; }
 .notificationButton { width: 42px; height: 42px; display: grid; place-items: center; color: #334b3a; font-size: 19px; }
 .account { min-width: 194px; height: 52px; display: flex; align-items: center; gap: 10px; padding: 6px 9px; border: 0; border-radius: 6px; color: #26372c; background: transparent; cursor: pointer; text-align: left; }
 .account:hover { background: #f1f6f2; }
