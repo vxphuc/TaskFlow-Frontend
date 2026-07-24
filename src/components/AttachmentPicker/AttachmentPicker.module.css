@@ -1,0 +1,22 @@
+.picker {
+  padding: 12px;
+  border: 1px dashed #b9cbbf;
+  border-radius: 6px;
+  background: #f8fbf9;
+}
+
+.picker :global(.ant-upload-list) {
+  margin-top: 8px;
+}
+
+.picker :global(.ant-upload-list-item) {
+  margin-top: 4px;
+}
+
+.hint {
+  display: block;
+  margin-top: 8px;
+  color: #68756c;
+  font-size: 12px;
+  line-height: 1.5;
+}

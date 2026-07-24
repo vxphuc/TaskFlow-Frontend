@@ -1,4 +1,4 @@
-import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space } from 'antd'
+import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space, message } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
@@ -9,8 +9,9 @@ import {
   FiUser,
 } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { createTaskApi, getMyCreatedTasksApi } from '../../api/taskApi'
+import { createTaskApi, getMyCreatedTasksApi, uploadTaskAttachmentApi } from '../../api/taskApi'
 import { getUsersApi } from '../../api/userApi'
+import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel, priorityOptions, taskStatuses } from '../../utils/task'
 import styles from './UserCreatedTasksPage.module.css'
@@ -25,6 +26,7 @@ export default function UserCreatedTasksPage() {
   const [priority, setPriority] = useState()
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [creationFiles, setCreationFiles] = useState([])
   const [error, setError] = useState('')
 
   const loadData = useCallback(async () => {
@@ -60,15 +62,40 @@ export default function UserCreatedTasksPage() {
         ...values,
         due_date: values.due_date?.toISOString(),
       })
+      const task = response.data.task
+
+      if (creationFiles.length) {
+        const uploadResults = await Promise.allSettled(
+          creationFiles.map((file) => uploadTaskAttachmentApi(task.id, file)),
+        )
+        const failedUploads = uploadResults.filter((result) => result.status === 'rejected')
+
+        if (failedUploads.length) {
+          message.warning(
+            `Task đã được tạo, nhưng ${failedUploads.length}/${creationFiles.length} file tải lên không thành công.`,
+          )
+        } else {
+          message.success(`Đã tạo task và tải lên ${creationFiles.length} file.`)
+        }
+      }
+
       setModalOpen(false)
+      setCreationFiles([])
       form.resetFields()
       await loadData()
-      navigate(`/app/tasks/${response.data.task.id}`)
+      navigate(`/app/tasks/${task.id}`)
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tạo task.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const closeCreateModal = () => {
+    if (submitting) return
+    setModalOpen(false)
+    setCreationFiles([])
+    form.resetFields()
   }
 
   return (
@@ -220,7 +247,7 @@ export default function UserCreatedTasksPage() {
       <Modal
         title="Giao công việc mới"
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={closeCreateModal}
         footer={null}
         destroyOnHidden
       >
@@ -247,8 +274,15 @@ export default function UserCreatedTasksPage() {
               <DatePicker showTime format="DD/MM/YYYY HH:mm" placeholder="Chọn thời hạn" />
             </Form.Item>
           </div>
+          <Form.Item label="File hoặc hình ảnh đính kèm">
+            <AttachmentPicker
+              files={creationFiles}
+              onChange={setCreationFiles}
+              disabled={submitting}
+            />
+          </Form.Item>
           <div className={styles.modalActions}>
-            <Button onClick={() => setModalOpen(false)}>Hủy</Button>
+            <Button onClick={closeCreateModal} disabled={submitting}>Hủy</Button>
             <Button type="primary" htmlType="submit" loading={submitting} disabled={!assignees.length}>Giao task</Button>
           </div>
         </Form>

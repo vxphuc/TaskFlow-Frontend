@@ -61,6 +61,7 @@ import {
   uploadTaskAttachmentApi,
   withdrawSubmissionApi,
 } from '../../api/taskApi'
+import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import {
@@ -115,6 +116,7 @@ export default function UserTaskDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [actionModal, setActionModal] = useState(null)
+  const [subtaskCreationFiles, setSubtaskCreationFiles] = useState([])
 
   const loadDetail = useCallback(async () => {
     setError('')
@@ -233,14 +235,47 @@ export default function UserTaskDetailPage() {
       return runAction(() => cancelTaskApi(taskId, { reason: values.reason }))
     }
     if (actionModal === 'subtask') {
-      return runAction(() => createSubtaskApi(taskId, {
-        title: values.title,
-        description: values.description,
-        assigned_to: values.assigned_to,
-        priority: values.priority,
-        due_date: values.due_date?.toISOString(),
-      }))
+      return runAction(async () => {
+        const response = await createSubtaskApi(taskId, {
+          title: values.title,
+          description: values.description,
+          assigned_to: values.assigned_to,
+          priority: values.priority,
+          due_date: values.due_date?.toISOString(),
+        })
+        const subtask = response.data.subtask
+
+        if (subtaskCreationFiles.length) {
+          const uploadResults = await Promise.allSettled(
+            subtaskCreationFiles.map(
+              (file) => uploadTaskAttachmentApi(subtask.id, file),
+            ),
+          )
+          const failedUploads = uploadResults.filter(
+            (result) => result.status === 'rejected',
+          )
+
+          if (failedUploads.length) {
+            message.warning(
+              `Subtask đã được tạo, nhưng ${failedUploads.length}/${subtaskCreationFiles.length} file tải lên không thành công.`,
+            )
+          } else {
+            message.success(
+              `Đã tạo subtask và tải lên ${subtaskCreationFiles.length} file.`,
+            )
+          }
+        }
+
+        setSubtaskCreationFiles([])
+      })
     }
+  }
+
+  const closeActionModal = () => {
+    if (actionLoading) return
+    setActionModal(null)
+    setSubtaskCreationFiles([])
+    actionForm.resetFields()
   }
 
   const sendComment = async ({ content }) => {
@@ -608,7 +643,7 @@ export default function UserTaskDetailPage() {
           subtask: 'Tạo công việc con',
         }[actionModal]}
         open={Boolean(actionModal)}
-        onCancel={() => { setActionModal(null); actionForm.resetFields() }}
+        onCancel={closeActionModal}
         footer={null}
         destroyOnHidden
       >
@@ -659,10 +694,17 @@ export default function UserTaskDetailPage() {
                   <DatePicker showTime format="DD/MM/YYYY HH:mm" className={styles.fullWidth} />
                 </Form.Item>
               </div>
+              <Form.Item label="File hoặc hình ảnh đính kèm">
+                <AttachmentPicker
+                  files={subtaskCreationFiles}
+                  onChange={setSubtaskCreationFiles}
+                  disabled={actionLoading}
+                />
+              </Form.Item>
             </>
           )}
           <div className={styles.modalActions}>
-            <Button onClick={() => setActionModal(null)}>Đóng</Button>
+            <Button onClick={closeActionModal} disabled={actionLoading}>Đóng</Button>
             <Button
               type="primary"
               danger={['reject', 'cancel'].includes(actionModal)}
