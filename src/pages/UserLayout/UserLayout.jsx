@@ -27,6 +27,7 @@ import {
   FiUsers,
   FiWifi,
   FiWifiOff,
+  FiZap,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -49,6 +50,7 @@ const navigation = [
   { key: '/app/created', icon: <FiSend />, label: 'Việc tôi giao' },
   { key: '/app/team', icon: <FiUsers />, label: 'Nhân sự cấp dưới' },
   { key: '/app/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
+  { key: '/app/initiatives', icon: <FiZap />, label: 'Sáng kiến' },
   { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
   { key: '/app/guide', icon: <FiBookOpen />, label: 'Hướng dẫn sử dụng' },
 ]
@@ -108,6 +110,12 @@ export default function UserLayout() {
     if (notification.reference_type === 'TASK' && notification.reference_id) {
       setNotificationOpen(false)
       navigate(`/app/tasks/${notification.reference_id}`)
+    } else if (
+      notification.reference_type === 'INITIATIVE'
+      && notification.reference_id
+    ) {
+      setNotificationOpen(false)
+      navigate(`/app/initiatives?initiative=${notification.reference_id}`)
     }
   }
 

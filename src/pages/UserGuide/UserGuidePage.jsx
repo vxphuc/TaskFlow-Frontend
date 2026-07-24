@@ -12,6 +12,7 @@ import {
   FiRepeat,
   FiSend,
   FiUserPlus,
+  FiZap,
 } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import styles from './UserGuidePage.module.css'
@@ -133,6 +134,23 @@ const guides = [
       ['Sinh thử có kiểm soát', 'Dùng thao tác sinh task cho kỳ khi cần kiểm tra một chu kỳ cụ thể.'],
     ],
     note: 'Tạm ngưng mẫu khi quy trình không còn sử dụng để tránh sinh thêm công việc không cần thiết.',
+  },
+  {
+    id: 'initiatives',
+    icon: FiZap,
+    title: 'Gửi và duyệt sáng kiến',
+    audience: 'Dành cho nhân viên và quản lý trực tiếp',
+    summary: 'Đề xuất cải tiến lên cấp trên và chuyển ý tưởng được duyệt thành công việc thực tế.',
+    href: '/app/initiatives',
+    action: 'Đến Sáng kiến',
+    steps: [
+      ['Gửi đề xuất', 'Mở Sáng kiến, bấm Gửi sáng kiến và mô tả vấn đề, cách cải tiến, lợi ích dự kiến.'],
+      ['Quản lý tiếp nhận', 'Sáng kiến được gửi đúng quản lý trực tiếp và xuất hiện trong tab Cần tôi duyệt.'],
+      ['Ra quyết định', 'Quản lý đọc chi tiết, nhập phản hồi rồi chọn Không duyệt hoặc Duyệt và tạo task.'],
+      ['Thiết lập công việc', 'Khi duyệt, quản lý chọn mức ưu tiên, deadline và có thể thêm lưu ý triển khai.'],
+      ['Thực hiện bình thường', 'Task mới được giao lại cho người đề xuất để nhận việc, gửi kết quả và chờ duyệt như các task khác.'],
+    ],
+    note: 'Tài khoản phải có quản lý trực tiếp hợp lệ. Sáng kiến đã xử lý không thể duyệt hoặc từ chối lần thứ hai.',
   },
   {
     id: 'reports-notifications',

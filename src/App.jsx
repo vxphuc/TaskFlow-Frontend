@@ -20,6 +20,7 @@ const UserTaskDetailPage = lazy(() => import('./pages/UserTaskDetail/UserTaskDet
 const UserReportsPage = lazy(() => import('./pages/UserReports/UserReportsPage'))
 const UserRecurringPage = lazy(() => import('./pages/UserRecurring/UserRecurringPage'))
 const UserTeamPage = lazy(() => import('./pages/UserTeam/UserTeamPage'))
+const InitiativesPage = lazy(() => import('./pages/Initiatives/InitiativesPage'))
 
 function App() {
   const { user, loading } = useAuth()
@@ -65,6 +66,7 @@ function App() {
               <Route path="/app/team" element={<UserTeamPage />} />
               <Route path="/app/reports" element={<UserReportsPage />} />
               <Route path="/app/recurring" element={<UserRecurringPage />} />
+              <Route path="/app/initiatives" element={<InitiativesPage />} />
               <Route path="/app/guide" element={<UserGuidePage />} />
               <Route path="/app/tasks/:taskId" element={<UserTaskDetailPage />} />
             </Route>
