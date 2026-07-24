@@ -34,6 +34,7 @@ import {
   FiSlash,
   FiTrash2,
   FiUpload,
+  FiUser,
   FiX,
 } from 'react-icons/fi'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -372,7 +373,14 @@ export default function UserTaskDetailPage() {
           </header>
 
           <section className={styles.metaGrid}>
-            <div><span>Vai trò của bạn</span><strong>{isCreator ? 'Người giao việc' : 'Người thực hiện'}</strong></div>
+            <div>
+              <span>{isCreator ? 'Người thực hiện' : 'Người giao'}</span>
+              <strong>
+                {isCreator
+                  ? task.assigned_to_name || 'Chưa xác định'
+                  : task.created_by_name || 'Chưa xác định'}
+              </strong>
+            </div>
             <div><span>Ngày giao</span><strong>{formatDateTime(task.assigned_at)}</strong></div>
             <div><span>Deadline hiện tại</span><strong>{formatDateTime(task.due_date)}</strong></div>
             <div><span>Ngày hoàn thành</span><strong>{formatDateTime(task.completed_at)}</strong></div>
@@ -554,7 +562,15 @@ export default function UserTaskDetailPage() {
                     <div className={styles.subtaskList}>
                       {subtasks.map((subtask) => (
                         <button type="button" key={subtask.id} onClick={() => navigate(`/app/tasks/${subtask.id}`)}>
-                          <span><strong>{subtask.title}</strong><small>Hạn {formatDateTime(subtask.due_date)}</small></span>
+                          <span>
+                            <strong>{subtask.title}</strong>
+                            {subtask.created_by === user.id ? (
+                              <small><FiUser /> Người thực hiện: {subtask.assigned_to_name || 'Chưa xác định'}</small>
+                            ) : (
+                              <small><FiSend /> Người giao: {subtask.created_by_name || 'Chưa xác định'}</small>
+                            )}
+                            <small>Hạn {formatDateTime(subtask.due_date)}</small>
+                          </span>
                           <span className={`${styles.status} ${styles[subtask.status.toLowerCase()]}`}>{getStatusLabel(subtask.status)}</span>
                           <FiArrowLeft className={styles.openIcon} />
                         </button>

@@ -221,6 +221,13 @@ export default function UserReportsPage() {
                         </b>
                         Hạn {formatDateTime(task.due_date)}
                       </small>
+                      <small className={styles.taskPeople}>
+                        {view === 'assignee' ? (
+                          <>Người giao: <b>{task.created_by_name || 'Chưa xác định'}</b></>
+                        ) : (
+                          <>Người thực hiện: <b>{task.assigned_to_name || 'Chưa xác định'}</b></>
+                        )}
+                      </small>
                     </span>
                     <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>{getStatusLabel(task.status)}</span>
                   </button>

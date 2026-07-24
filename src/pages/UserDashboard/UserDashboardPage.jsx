@@ -109,6 +109,9 @@ export default function UserDashboardPage() {
                     <span className={styles.taskBody}>
                       <strong>{task.title}</strong>
                       <small>{getPriorityLabel(task.priority)} · Hạn {formatDateTime(task.due_date)}</small>
+                      <small className={styles.taskPeople}>
+                        <span><FiSend /> Người giao: {task.created_by_name || 'Chưa xác định'}</span>
+                      </small>
                     </span>
                     <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>
                       {getStatusLabel(task.status)}

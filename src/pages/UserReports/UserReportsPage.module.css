@@ -49,6 +49,8 @@
 .taskList button strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .taskList button small { display: flex; align-items: center; gap: 7px; color: #78857d; }
 .taskList button small b { padding: 3px 6px; border-radius: 4px; font-size: 10px; }
+.taskList button .taskPeople { flex-wrap: wrap; gap: 3px 6px; font-size: 11px; }
+.taskList button .taskPeople b { padding: 0; color: #4d5d53; background: transparent; font-size: inherit; }
 .mainTaskType { color: #206a37; background: #e8f4eb; }
 .subtaskType { color: #28648e; background: #e8f2fa; }
 .status { padding: 6px 9px; border-radius: 4px; color: #526158; background: #edf1ee; font-size: 11px; font-weight: 700; white-space: nowrap; }

@@ -1,6 +1,13 @@
 import { Alert, Button, Empty, Segmented, Select, Skeleton, Space, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiArrowRight, FiCornerDownRight, FiHelpCircle, FiInbox, FiRefreshCw } from 'react-icons/fi'
+import {
+  FiArrowRight,
+  FiCornerDownRight,
+  FiHelpCircle,
+  FiInbox,
+  FiRefreshCw,
+  FiSend,
+} from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import {
   getMyAssignedSubtasksApi,
@@ -150,6 +157,9 @@ export default function UserAssignedTasksPage() {
                         {getPriorityLabel(task.priority)}
                       </>
                     )}
+                  </small>
+                  <small className={styles.people}>
+                    <span><FiSend /> Người giao: <b>{task.created_by_name || 'Chưa xác định'}</b></span>
                   </small>
                 </span>
               </span>

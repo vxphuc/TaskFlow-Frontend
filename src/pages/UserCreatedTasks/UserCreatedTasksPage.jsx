@@ -128,6 +128,9 @@ export default function UserCreatedTasksPage() {
                 </span>
                 <strong className={styles.title}>{task.title}</strong>
                 <span className={styles.description}>{task.description || 'Không có mô tả công việc.'}</span>
+                <span className={styles.people}>
+                  <span><FiUser /> Người thực hiện: <b>{task.assigned_to_name || 'Chưa xác định'}</b></span>
+                </span>
                 <span className={styles.cardBottom}>
                   <small>Hạn {formatDateTime(task.due_date)}</small><FiArrowRight />
                 </span>
@@ -153,8 +156,9 @@ export default function UserCreatedTasksPage() {
                           <strong>{subtask.title}</strong>
                           <small>
                             <FiUser />
-                            {assigneesById[subtask.assigned_to]?.full_name || 'Người thực hiện'}
-                            {' · '}
+                            Người thực hiện: {subtask.assigned_to_name || assigneesById[subtask.assigned_to]?.full_name || 'Chưa xác định'}
+                          </small>
+                          <small>
                             Hạn {formatDateTime(subtask.due_date)}
                           </small>
                         </span>
@@ -194,8 +198,9 @@ export default function UserCreatedTasksPage() {
                       <strong>{subtask.title}</strong>
                       <small>
                         <FiUser />
-                        {subtask.assigned_to_name || assigneesById[subtask.assigned_to]?.full_name || 'Người thực hiện'}
-                        {' · '}
+                        Người thực hiện: {subtask.assigned_to_name || assigneesById[subtask.assigned_to]?.full_name || 'Chưa xác định'}
+                      </small>
+                      <small>
                         {subtask.parent_task_title || 'Task chính'}
                         {' · '}
                         Hạn {formatDateTime(subtask.due_date)}

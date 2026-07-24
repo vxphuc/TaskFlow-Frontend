@@ -328,6 +328,22 @@ export default function UserRecurringPage() {
     },
     { title: 'Công việc', dataIndex: 'title', key: 'title' },
     {
+      title: 'Người liên quan',
+      key: 'participantName',
+      width: 170,
+      render: (_, row) => row.created_by === user.id
+        ? `Người thực hiện: ${
+          row.assigned_to_name
+            || usersById[row.assigned_to]?.full_name
+            || 'Chưa xác định'
+        }`
+        : `Người giao: ${
+          row.created_by_name
+            || usersById[row.created_by]?.full_name
+            || 'Chưa xác định'
+        }`,
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',

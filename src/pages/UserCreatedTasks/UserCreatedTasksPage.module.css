@@ -13,7 +13,7 @@
 .taskGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
 .taskCard { min-width: 0; overflow: hidden; border: 1px solid #dfe7e1; border-radius: 8px; color: #26372c; background: #fff; }
 .taskCard:hover { border-color: #8eb29a; box-shadow: 0 6px 18px rgba(35,82,49,.07); }
-.taskMain { width: 100%; min-height: 206px; display: flex; flex-direction: column; padding: 18px; border: 0; color: inherit; background: #fff; cursor: pointer; text-align: left; }
+.taskMain { width: 100%; min-height: 236px; display: flex; flex-direction: column; padding: 18px; border: 0; color: inherit; background: #fff; cursor: pointer; text-align: left; }
 .taskMain:hover { background: #fbfdfb; }
 .cardTop, .cardBottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .priority, .status { padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
@@ -28,6 +28,10 @@
 .status.rejected, .status.cancelled { color: #9b3434; background: #fbe9e9; }
 .title { margin: 20px 0 8px; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
 .description { min-height: 43px; display: -webkit-box; overflow: hidden; color: #68766d; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.people { display: grid; gap: 6px; margin-top: 14px; color: #68766d; font-size: 11px; }
+.people span { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.people svg { flex: 0 0 auto; color: #4c7458; }
+.people b { overflow: hidden; color: #405047; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .cardBottom { margin-top: auto; padding-top: 18px; color: #607067; border-top: 1px solid #e8ece9; }
 .cardBottom small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .subtasks { padding: 14px 16px 16px; border-top: 1px solid #e3e9e4; background: #f8faf8; }
@@ -35,10 +39,10 @@
 .subtaskHeader strong { min-width: 23px; height: 23px; display: grid; place-items: center; border-radius: 4px; color: #206a37; background: #e6f1e9; font-size: 11px; }
 .noSubtask { display: block; padding: 8px 0 2px; color: #8a968e; font-size: 12px; }
 .subtaskList { max-height: 220px; display: grid; gap: 7px; overflow-y: auto; }
-.subtaskList button { width: 100%; min-height: 60px; display: grid; grid-template-columns: 20px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 9px 10px; border: 1px solid #dfe7e1; border-radius: 6px; color: #314138; background: #fff; cursor: pointer; text-align: left; }
+.subtaskList button { width: 100%; min-height: 74px; display: grid; grid-template-columns: 20px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 9px 10px; border: 1px solid #dfe7e1; border-radius: 6px; color: #314138; background: #fff; cursor: pointer; text-align: left; }
 .subtaskList button:hover { border-color: #91b49c; }
 .subtaskList button > svg { color: #206a37; }
-.subtaskList button > span:nth-child(2) { min-width: 0; display: grid; gap: 5px; }
+.subtaskList button > span:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
 .subtaskList button > span:nth-child(2) > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .subtaskList small { display: flex; align-items: center; gap: 4px; overflow: hidden; color: #748179; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .subtaskList small svg { flex: 0 0 auto; }
