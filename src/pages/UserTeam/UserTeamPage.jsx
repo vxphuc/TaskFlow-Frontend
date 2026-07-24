@@ -7,13 +7,15 @@ import {
   Input,
   Modal,
   Select,
+  Space,
   Table,
   Tag,
   message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiSearch, FiUser, FiUserPlus, FiUsers } from 'react-icons/fi'
+import { FiHelpCircle, FiSearch, FiUser, FiUserPlus, FiUsers } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 import { getPositionsApi } from '../../api/positionApi'
 import { createUserApi, getUsersApi } from '../../api/userApi'
 import { useAuth } from '../../contexts/useAuth'
@@ -21,6 +23,7 @@ import styles from './UserTeamPage.module.css'
 
 export default function UserTeamPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const departmentId = user?.department_id
   const [form] = Form.useForm()
   const [users, setUsers] = useState([])
@@ -219,14 +222,22 @@ export default function UserTeamPage() {
           <h1>Nhân sự cấp dưới</h1>
           <p>Theo dõi đội ngũ thuộc các cấp thấp hơn trong cùng phòng ban.</p>
         </div>
-        <Button
-          type="primary"
-          icon={<FiUserPlus />}
-          onClick={showCreate}
-          disabled={!organizationReady || eligiblePositions.length === 0}
-        >
-          Thêm nhân sự
-        </Button>
+        <Space wrap>
+          <Button
+            icon={<FiHelpCircle />}
+            onClick={() => navigate('/app/guide#create-user')}
+          >
+            Hướng dẫn
+          </Button>
+          <Button
+            type="primary"
+            icon={<FiUserPlus />}
+            onClick={showCreate}
+            disabled={!organizationReady || eligiblePositions.length === 0}
+          >
+            Thêm nhân sự
+          </Button>
+        </Space>
       </header>
 
       {!organizationReady && (

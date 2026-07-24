@@ -1,8 +1,9 @@
-import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton } from 'antd'
+import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
   FiCornerDownRight,
+  FiHelpCircle,
   FiPlus,
   FiSend,
   FiUser,
@@ -78,9 +79,17 @@ export default function UserCreatedTasksPage() {
           <h1>Việc tôi giao</h1>
           <p>Theo dõi công việc đã giao cho các cấp dưới trong phòng ban.</p>
         </div>
-        <Button type="primary" icon={<FiPlus />} onClick={() => setModalOpen(true)}>
-          Giao công việc
-        </Button>
+        <Space wrap>
+          <Button
+            icon={<FiHelpCircle />}
+            onClick={() => navigate('/app/guide#create-task')}
+          >
+            Hướng dẫn
+          </Button>
+          <Button type="primary" icon={<FiPlus />} onClick={() => setModalOpen(true)}>
+            Giao công việc
+          </Button>
+        </Space>
       </header>
 
       <section className={styles.toolbar}>

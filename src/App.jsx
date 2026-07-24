@@ -15,6 +15,7 @@ const UsersPage = lazy(() => import('./pages/Users/UsersPage'))
 const UserDashboardPage = lazy(() => import('./pages/UserDashboard/UserDashboardPage'))
 const UserAssignedTasksPage = lazy(() => import('./pages/UserAssignedTasks/UserAssignedTasksPage'))
 const UserCreatedTasksPage = lazy(() => import('./pages/UserCreatedTasks/UserCreatedTasksPage'))
+const UserGuidePage = lazy(() => import('./pages/UserGuide/UserGuidePage'))
 const UserTaskDetailPage = lazy(() => import('./pages/UserTaskDetail/UserTaskDetailPage'))
 const UserReportsPage = lazy(() => import('./pages/UserReports/UserReportsPage'))
 const UserRecurringPage = lazy(() => import('./pages/UserRecurring/UserRecurringPage'))
@@ -64,6 +65,7 @@ function App() {
               <Route path="/app/team" element={<UserTeamPage />} />
               <Route path="/app/reports" element={<UserReportsPage />} />
               <Route path="/app/recurring" element={<UserRecurringPage />} />
+              <Route path="/app/guide" element={<UserGuidePage />} />
               <Route path="/app/tasks/:taskId" element={<UserTaskDetailPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/app" replace />} />

@@ -1,6 +1,6 @@
-import { Alert, Button, Empty, Segmented, Select, Skeleton, Tag } from 'antd'
+import { Alert, Button, Empty, Segmented, Select, Skeleton, Space, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiArrowRight, FiCornerDownRight, FiInbox, FiRefreshCw } from 'react-icons/fi'
+import { FiArrowRight, FiCornerDownRight, FiHelpCircle, FiInbox, FiRefreshCw } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import {
   getMyAssignedSubtasksApi,
@@ -74,7 +74,15 @@ export default function UserAssignedTasksPage() {
           <h1>Việc được giao</h1>
           <p>Theo dõi tiến độ, deadline và gửi kết quả công việc.</p>
         </div>
-        <Button icon={<FiRefreshCw />} onClick={loadTasks}>Làm mới</Button>
+        <Space wrap>
+          <Button
+            icon={<FiHelpCircle />}
+            onClick={() => navigate('/app/guide#assigned-task')}
+          >
+            Hướng dẫn
+          </Button>
+          <Button icon={<FiRefreshCw />} onClick={loadTasks}>Làm mới</Button>
+        </Space>
       </header>
 
       <section className={styles.toolbar}>

@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiBell,
   FiBarChart2,
+  FiBookOpen,
   FiChevronDown,
   FiClipboard,
   FiGrid,
@@ -49,6 +50,7 @@ const navigation = [
   { key: '/app/team', icon: <FiUsers />, label: 'Nhân sự cấp dưới' },
   { key: '/app/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
   { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
+  { key: '/app/guide', icon: <FiBookOpen />, label: 'Hướng dẫn sử dụng' },
 ]
 
 function Brand() {
