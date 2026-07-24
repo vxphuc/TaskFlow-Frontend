@@ -61,6 +61,7 @@ import {
   withdrawSubmissionApi,
 } from '../../api/taskApi'
 import { useAuth } from '../../contexts/useAuth'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import {
   formatDateTime,
   getPriorityLabel,
@@ -149,72 +150,25 @@ export default function UserTaskDetailPage() {
     Promise.resolve().then(loadDetail)
   }, [loadDetail])
 
-  const refreshTaskState = useCallback(async () => {
-    if (document.visibilityState !== 'visible') return
-
-    try {
-      const response = await getTaskDetailApi(taskId)
-      setTask(response.data.task)
-    } catch {
-      // The full detail loader owns the user-facing error state.
-    }
-  }, [taskId])
-
-  useEffect(() => {
-    const intervalId = window.setInterval(refreshTaskState, 5000)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshTaskState()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.clearInterval(intervalId)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [refreshTaskState])
-
   const refreshComments = useCallback(async () => {
-    if (document.visibilityState !== 'visible') return
-
     try {
       const response = await getTaskCommentsApi(taskId)
-      const nextComments = response.data.comments || []
-      setComments((currentComments) => {
-        const currentLastId = currentComments.at(-1)?.id
-        const nextLastId = nextComments.at(-1)?.id
-
-        if (
-          currentComments.length === nextComments.length
-          && currentLastId === nextLastId
-        ) {
-          return currentComments
-        }
-
-        return nextComments
-      })
+      setComments(response.data.comments || [])
     } catch {
-      // The main detail loader keeps the user-facing error state.
+      // The fallback detail refresh owns the user-facing error state.
     }
   }, [taskId])
 
-  useEffect(() => {
-    const intervalId = window.setInterval(refreshComments, 3000)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshComments()
-      }
+  const refreshRealtimeDetail = useCallback((event) => {
+    if (event?.action === 'COMMENT_CREATED') {
+      refreshComments()
+      return
     }
 
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    loadDetail()
+  }, [loadDetail, refreshComments])
 
-    return () => {
-      window.clearInterval(intervalId)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [refreshComments])
+  useRealtimeRefresh(refreshRealtimeDetail, 'task')
 
   useEffect(() => {
     if (

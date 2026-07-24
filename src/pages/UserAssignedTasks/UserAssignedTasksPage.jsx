@@ -14,6 +14,7 @@ import {
   priorityOptions,
   taskStatuses,
 } from '../../utils/task'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import styles from './UserAssignedTasksPage.module.css'
 
 export default function UserAssignedTasksPage() {
@@ -50,21 +51,7 @@ export default function UserAssignedTasksPage() {
     Promise.resolve().then(loadTasks)
   }, [loadTasks])
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === 'visible') loadTasks()
-    }, 10000)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') loadTasks()
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.clearInterval(intervalId)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [loadTasks])
+  useRealtimeRefresh(loadTasks, 'task')
 
   const counts = useMemo(() => ({
     all: tasks?.length || 0,

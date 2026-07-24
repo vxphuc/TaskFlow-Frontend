@@ -32,6 +32,7 @@ import {
   markNotificationReadApi,
 } from '../../api/notificationApi'
 import { useAuth } from '../../contexts/useAuth'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime } from '../../utils/task'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './UserLayout.module.css'
@@ -88,6 +89,8 @@ export default function UserLayout() {
   useEffect(() => {
     Promise.resolve().then(loadNotifications)
   }, [loadNotifications])
+
+  useRealtimeRefresh(loadNotifications, 'notification')
 
   const openNotification = async (notification) => {
     if (!notification.is_read) {

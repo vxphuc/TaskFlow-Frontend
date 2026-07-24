@@ -1,10 +1,11 @@
 import { Alert, Button, Progress, Skeleton } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiArrowRight, FiCheckCircle, FiClock, FiInbox, FiSend } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { getMyMonthlyReportApi } from '../../api/reportApi'
 import { getMyAssignedTasksApi, getMyCreatedTasksApi } from '../../api/taskApi'
 import { useAuth } from '../../contexts/useAuth'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel } from '../../utils/task'
 import styles from './UserDashboardPage.module.css'
 
@@ -14,22 +15,31 @@ export default function UserDashboardPage() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  const loadDashboard = useCallback(async () => {
     const now = new Date()
-    Promise.all([
-      getMyAssignedTasksApi(),
-      getMyCreatedTasksApi(),
-      getMyMonthlyReportApi(now.getFullYear(), now.getMonth() + 1),
-    ])
-      .then(([assignedRes, createdRes, reportRes]) => {
-        setData({
-          assigned: assignedRes.data.tasks || [],
-          created: createdRes.data.tasks || [],
-          report: reportRes.data.report || {},
-        })
+    setError('')
+
+    try {
+      const [assignedRes, createdRes, reportRes] = await Promise.all([
+        getMyAssignedTasksApi(),
+        getMyCreatedTasksApi(),
+        getMyMonthlyReportApi(now.getFullYear(), now.getMonth() + 1),
+      ])
+      setData({
+        assigned: assignedRes.data.tasks || [],
+        created: createdRes.data.tasks || [],
+        report: reportRes.data.report || {},
       })
-      .catch((err) => setError(err.response?.data?.message || 'Không thể tải dữ liệu tổng quan.'))
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể tải dữ liệu tổng quan.')
+    }
   }, [])
+
+  useEffect(() => {
+    Promise.resolve().then(loadDashboard)
+  }, [loadDashboard])
+
+  useRealtimeRefresh(loadDashboard, 'task')
 
   const stats = useMemo(() => {
     if (!data) return []

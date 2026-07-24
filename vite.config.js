@@ -12,6 +12,11 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:5000',
           changeOrigin: true,
         },
+        '/socket.io': {
+          target: env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:5000',
+          changeOrigin: true,
+          ws: true,
+        },
       },
     },
   }

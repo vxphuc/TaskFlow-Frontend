@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { getMeApi, loginApi } from '../api/authApi'
+import {
+  connectRealtime,
+  disconnectRealtime,
+} from '../realtime/realtimeClient'
 import { AuthContext } from './authContextValue'
 
 export function AuthProvider({ children }) {
@@ -14,6 +18,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    disconnectRealtime()
     localStorage.removeItem('access_token')
     setUser(null)
   }
@@ -30,6 +35,18 @@ export function AuthProvider({ children }) {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+
+    if (user && token) {
+      connectRealtime(token)
+    } else {
+      disconnectRealtime()
+    }
+
+    return disconnectRealtime
+  }, [user])
 
   useEffect(() => {
     window.addEventListener('auth:expired', logout)

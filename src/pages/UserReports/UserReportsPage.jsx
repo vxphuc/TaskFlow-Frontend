@@ -16,6 +16,7 @@ import {
   getMyAssignerMonthlyReportApi,
   getMyMonthlyReportApi,
 } from '../../api/reportApi'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getStatusLabel } from '../../utils/task'
 import styles from './UserReportsPage.module.css'
 
@@ -49,6 +50,8 @@ export default function UserReportsPage() {
   useEffect(() => {
     Promise.resolve().then(loadReport)
   }, [loadReport])
+
+  useRealtimeRefresh(loadReport, 'task')
 
   const summary = useMemo(() => report?.summary || {}, [report])
   const workItemBreakdown = report?.work_item_breakdown || {}

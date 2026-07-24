@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { createTaskApi, getMyCreatedTasksApi } from '../../api/taskApi'
 import { getUsersApi } from '../../api/userApi'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel, priorityOptions, taskStatuses } from '../../utils/task'
 import styles from './UserCreatedTasksPage.module.css'
 
@@ -43,6 +44,8 @@ export default function UserCreatedTasksPage() {
   useEffect(() => {
     Promise.resolve().then(loadData)
   }, [loadData])
+
+  useRealtimeRefresh(loadData, 'task')
 
   const assigneesById = useMemo(
     () => Object.fromEntries(assignees.map((item) => [item.id, item])),
