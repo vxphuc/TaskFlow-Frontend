@@ -165,33 +165,51 @@
 .submissionUpload {
   margin-top: 12px;
 }
-.withdrawn { 
-  border-left-color: #9a6d28; 
-  background: #fcfaf5; 
-}
-.withdrawn p { 
-  color: #7d857f; 
-  text-decoration: line-through; 
-}
-.attachments {
+.requirementAttachments {
   display: grid;
-  gap: 18px;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8e3;
 }
-.attachmentToolbar {
+.attachmentSectionHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e4e9e5;
+  gap: 14px;
 }
-.attachmentToolbar > div {
+.attachmentSectionHead > div {
+  min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
-.attachmentToolbar span {
+.attachmentSectionHead strong {
+  color: #26392d;
+  font-size: 13px;
+}
+.attachmentSectionHead span {
   color: #718077;
+  font-size: 11px;
+}
+.submissionAttachments {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #f7f9f7;
+}
+.submissionAttachments > strong {
+  color: #435248;
   font-size: 12px;
+}
+.withdrawn {
+  border-left-color: #9a6d28;
+  background: #fcfaf5;
+}
+.withdrawn p {
+  color: #7d857f;
+  text-decoration: line-through;
 }
 .attachmentList {
   display: grid;
@@ -313,8 +331,8 @@
   .metaGrid div:last-child { border-bottom: 0; }
   .workspace { padding: 4px 14px 18px; }
   .submissionHead { flex-direction: column; }
-  .attachmentToolbar { align-items: stretch; flex-direction: column; }
-  .attachmentToolbar button { width: 100%; }
+  .attachmentSectionHead { align-items: stretch; flex-direction: column; }
+  .attachmentSectionHead button { width: 100%; }
   .attachment { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; }
   .fileIcon { width: 36px; height: 36px; }
   .fileInfo small { line-height: 1.45; }

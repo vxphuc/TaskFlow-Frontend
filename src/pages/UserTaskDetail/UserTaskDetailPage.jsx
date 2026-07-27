@@ -116,6 +116,7 @@ export default function UserTaskDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [actionModal, setActionModal] = useState(null)
+  const [submissionFiles, setSubmissionFiles] = useState([])
   const [subtaskCreationFiles, setSubtaskCreationFiles] = useState([])
 
   const loadDetail = useCallback(async () => {
@@ -199,6 +200,22 @@ export default function UserTaskDetailPage() {
   const isAssignee = task?.assigned_to === user.id
   const isCreator = task?.created_by === user.id
   const latestSubmission = submissions.at(-1)
+  const taskAttachments = useMemo(
+    () => attachments.filter((attachment) => !attachment.submission_id),
+    [attachments],
+  )
+  const attachmentsBySubmission = useMemo(
+    () => attachments.reduce((groups, attachment) => {
+      if (!attachment.submission_id) return groups
+
+      if (!groups[attachment.submission_id]) {
+        groups[attachment.submission_id] = []
+      }
+      groups[attachment.submission_id].push(attachment)
+      return groups
+    }, {}),
+    [attachments],
+  )
 
   const runAction = useCallback(async (callback) => {
     setActionLoading(true)
@@ -217,7 +234,33 @@ export default function UserTaskDetailPage() {
 
   const submitActionModal = (values) => {
     if (actionModal === 'submit') {
-      return runAction(() => submitTaskApi(taskId, { content: values.content }))
+      return runAction(async () => {
+        const response = await submitTaskApi(taskId, { content: values.content })
+        const submission = response.data.submission
+
+        if (submissionFiles.length) {
+          const uploadResults = await Promise.allSettled(
+            submissionFiles.map(
+              (file) => uploadSubmissionAttachmentApi(submission.id, file),
+            ),
+          )
+          const failedUploads = uploadResults.filter(
+            (result) => result.status === 'rejected',
+          )
+
+          if (failedUploads.length) {
+            message.warning(
+              `Kết quả đã được gửi, nhưng ${failedUploads.length}/${submissionFiles.length} file tải lên không thành công.`,
+            )
+          } else {
+            message.success(
+              `Đã gửi kết quả kèm ${submissionFiles.length} file.`,
+            )
+          }
+        }
+
+        setSubmissionFiles([])
+      })
     }
     if (actionModal === 'withdraw') {
       return runAction(() => withdrawSubmissionApi(latestSubmission.id, { reason: values.reason }))
@@ -274,6 +317,7 @@ export default function UserTaskDetailPage() {
   const closeActionModal = () => {
     if (actionLoading) return
     setActionModal(null)
+    setSubmissionFiles([])
     setSubtaskCreationFiles([])
     actionForm.resetFields()
   }
@@ -340,6 +384,55 @@ export default function UserTaskDetailPage() {
     }
   }
 
+  const renderAttachmentList = (items) => (
+    <div className={styles.attachmentList}>
+      {items.map((attachment) => (
+        <article key={attachment.id} className={styles.attachment}>
+          <span className={styles.fileIcon}><FiFile /></span>
+          <span className={styles.fileInfo}>
+            <strong title={attachment.file_name}>{attachment.file_name}</strong>
+            <small>
+              {formatFileSize(attachment.file_size)}
+              {' · '}
+              {formatDateTime(attachment.created_at)}
+            </small>
+          </span>
+          <span className={styles.attachmentActions}>
+            <Tooltip title="Tải xuống">
+              <Button
+                type="text"
+                icon={<FiDownload />}
+                loading={attachmentLoading === attachment.id}
+                onClick={() => downloadAttachment(attachment)}
+                aria-label={`Tải ${attachment.file_name}`}
+              />
+            </Tooltip>
+            {attachment.can_delete && (
+              <Popconfirm
+                title="Xóa file đính kèm?"
+                description="File sẽ bị xóa khỏi lần gửi kết quả này."
+                okText="Xóa file"
+                cancelText="Hủy"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => deleteAttachment(attachment)}
+              >
+                <Tooltip title="Xóa file">
+                  <Button
+                    type="text"
+                    danger
+                    icon={<FiTrash2 />}
+                    disabled={attachmentLoading === attachment.id}
+                    aria-label={`Xóa ${attachment.file_name}`}
+                  />
+                </Tooltip>
+              </Popconfirm>
+            )}
+          </span>
+        </article>
+      ))}
+    </div>
+  )
+
   const actions = useMemo(() => {
     if (!task) return []
     const items = []
@@ -390,6 +483,31 @@ export default function UserTaskDetailPage() {
               </div>
               <h1>{task.title}</h1>
               <p>{task.description || 'Không có mô tả chi tiết cho công việc này.'}</p>
+              {(taskAttachments.length > 0 || (isCreator && isTaskOpen(task.status))) && (
+                <div className={styles.requirementAttachments}>
+                  <div className={styles.attachmentSectionHead}>
+                    <div>
+                      <strong>Tệp kèm yêu cầu ({taskAttachments.length})</strong>
+                      <span>Tài liệu, hình ảnh và dữ liệu đầu vào của công việc</span>
+                    </div>
+                    {isCreator && isTaskOpen(task.status) && (
+                      <Upload
+                        showUploadList={false}
+                        beforeUpload={(file) => uploadAttachment(file)}
+                      >
+                        <Button
+                          size="small"
+                          icon={<FiUpload />}
+                          loading={attachmentLoading === 'task'}
+                        >
+                          Bổ sung tệp
+                        </Button>
+                      </Upload>
+                    )}
+                  </div>
+                  {taskAttachments.length > 0 && renderAttachmentList(taskAttachments)}
+                </div>
+              )}
             </div>
             <div className={styles.actions}>
               {actions.map((action) => (
@@ -429,14 +547,22 @@ export default function UserTaskDetailPage() {
                   label: `Kết quả (${submissions.length})`,
                   children: (
                     <div className={styles.submissionList}>
-                      {submissions.length === 0 ? <Empty description="Chưa có kết quả được gửi" /> : submissions.map((submission) => (
-                        <article key={submission.id} className={`${styles.submission} ${submission.is_withdrawn ? styles.withdrawn : ''}`}>
+                      {submissions.length === 0 ? <Empty description="Chưa có kết quả được gửi" /> : submissions.map((submission) => {
+                        const submissionAttachments = attachmentsBySubmission[submission.id] || []
+                        return (
+                          <article key={submission.id} className={`${styles.submission} ${submission.is_withdrawn ? styles.withdrawn : ''}`}>
                           <div className={styles.submissionHead}>
                             <strong>Lần gửi #{submission.attempt_number}</strong>
                             <span>{submission.is_withdrawn ? 'Đã thu hồi' : 'Đã gửi'} · {formatDateTime(submission.submitted_at)}</span>
                           </div>
                           <p>{submission.content}</p>
                           {submission.withdrawal_reason && <small>Lý do thu hồi: {submission.withdrawal_reason}</small>}
+                          {submissionAttachments.length > 0 && (
+                            <div className={styles.submissionAttachments}>
+                              <strong>Tệp gửi kèm ({submissionAttachments.length})</strong>
+                              {renderAttachmentList(submissionAttachments)}
+                            </div>
+                          )}
                           {!submission.is_withdrawn && (
                             <Upload
                               showUploadList={false}
@@ -452,93 +578,9 @@ export default function UserTaskDetailPage() {
                               </Button>
                             </Upload>
                           )}
-                        </article>
-                      ))}
-                    </div>
-                  ),
-                },
-                {
-                  key: 'attachments',
-                  label: `Tệp đính kèm (${attachments.length})`,
-                  children: (
-                    <div className={styles.attachments}>
-                      <div className={styles.attachmentToolbar}>
-                        <div>
-                          <strong>Tài liệu công việc</strong>
-                          <span>PDF, Word, Excel, ảnh, TXT hoặc ZIP · tối đa 10 MB</span>
-                        </div>
-                        <Upload
-                          showUploadList={false}
-                          beforeUpload={(file) => uploadAttachment(file)}
-                        >
-                          <Button
-                            type="primary"
-                            icon={<FiUpload />}
-                            loading={attachmentLoading === 'task'}
-                          >
-                            Tải file lên
-                          </Button>
-                        </Upload>
-                      </div>
-                      {attachments.length === 0 ? (
-                        <Empty description="Chưa có file đính kèm" />
-                      ) : (
-                        <div className={styles.attachmentList}>
-                          {attachments.map((attachment) => {
-                            const submission = submissions.find(
-                              (item) => item.id === attachment.submission_id,
-                            )
-                            return (
-                              <article key={attachment.id} className={styles.attachment}>
-                                <span className={styles.fileIcon}><FiFile /></span>
-                                <span className={styles.fileInfo}>
-                                  <strong>{attachment.file_name}</strong>
-                                  <small>
-                                    {submission
-                                      ? `Kết quả lần #${submission.attempt_number}`
-                                      : 'Tài liệu chung của task'}
-                                    {' · '}
-                                    {formatFileSize(attachment.file_size)}
-                                    {' · '}
-                                    {formatDateTime(attachment.created_at)}
-                                  </small>
-                                </span>
-                                <span className={styles.attachmentActions}>
-                                  <Tooltip title="Tải xuống">
-                                    <Button
-                                      type="text"
-                                      icon={<FiDownload />}
-                                      loading={attachmentLoading === attachment.id}
-                                      onClick={() => downloadAttachment(attachment)}
-                                      aria-label={`Tải ${attachment.file_name}`}
-                                    />
-                                  </Tooltip>
-                                  {attachment.can_delete && (
-                                    <Popconfirm
-                                      title="Xóa file đính kèm?"
-                                      description="File sẽ bị xóa khỏi lần gửi kết quả này."
-                                      okText="Xóa file"
-                                      cancelText="Hủy"
-                                      okButtonProps={{ danger: true }}
-                                      onConfirm={() => deleteAttachment(attachment)}
-                                    >
-                                      <Tooltip title="Xóa file">
-                                        <Button
-                                          type="text"
-                                          danger
-                                          icon={<FiTrash2 />}
-                                          disabled={attachmentLoading === attachment.id}
-                                          aria-label={`Xóa ${attachment.file_name}`}
-                                        />
-                                      </Tooltip>
-                                    </Popconfirm>
-                                  )}
-                                </span>
-                              </article>
-                            )
-                          })}
-                        </div>
-                      )}
+                          </article>
+                        )
+                      })}
                     </div>
                   ),
                 },
@@ -649,9 +691,18 @@ export default function UserTaskDetailPage() {
       >
         <Form form={actionForm} layout="vertical" onFinish={submitActionModal}>
           {actionModal === 'submit' && (
-            <Form.Item name="content" label="Nội dung kết quả" rules={[{ required: true, message: 'Nhập nội dung kết quả' }]}>
-              <Input.TextArea rows={5} placeholder="Mô tả kết quả đã hoàn thành, đường dẫn tài liệu..." />
-            </Form.Item>
+            <>
+              <Form.Item name="content" label="Nội dung kết quả" rules={[{ required: true, message: 'Nhập nội dung kết quả' }]}>
+                <Input.TextArea rows={5} placeholder="Mô tả kết quả đã hoàn thành, đường dẫn tài liệu..." />
+              </Form.Item>
+              <Form.Item label="File hoặc hình ảnh gửi kèm">
+                <AttachmentPicker
+                  files={submissionFiles}
+                  onChange={setSubmissionFiles}
+                  disabled={actionLoading}
+                />
+              </Form.Item>
+            </>
           )}
           {['withdraw', 'approve', 'reject', 'cancel'].includes(actionModal) && (
             <Form.Item

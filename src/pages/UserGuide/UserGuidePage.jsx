@@ -113,7 +113,7 @@ const guides = [
     steps: [
       ['Mở tab Trao đổi', 'Tin nhắn mới được cập nhật theo thời gian thực cho người giao và người thực hiện.'],
       ['Gửi nhanh', 'Nhập nội dung rồi nhấn Enter hoặc bấm Gửi trao đổi.'],
-      ['Dùng đúng khu vực file', 'Tài liệu chung đặt tại Tệp đính kèm; file bàn giao gắn vào lần gửi kết quả.'],
+      ['Dùng đúng khu vực file', 'Tệp giao việc nằm ngay dưới yêu cầu; tệp bàn giao nằm trong đúng lần gửi kết quả.'],
       ['Theo dõi thay đổi', 'Tab Lịch sử lưu các mốc bắt đầu, gửi, duyệt, đổi deadline và hủy task.'],
     ],
     note: 'Biểu tượng kết nối cạnh chuông phải có màu xanh để nhận trao đổi và thông báo tức thời.',
