@@ -45,6 +45,17 @@ import styles from './UserLayout.module.css'
 const { Header, Sider, Content } = Layout
 const APP_TITLE = 'Quản trị công việc'
 
+const taskNotificationTabs = {
+  COMMENT_CREATED: 'comments',
+  TASK_SUBMITTED: 'submissions',
+  SUBMISSION_WITHDRAWN: 'submissions',
+  TASK_APPROVED: 'submissions',
+  TASK_REJECTED: 'submissions',
+  ATTACHMENT_UPLOADED: 'submissions',
+  TASK_DEADLINE_CHANGED: 'history',
+  TASK_CANCELLED: 'history',
+}
+
 const navigation = [
   { key: '/app', icon: <FiGrid />, label: 'Tổng quan' },
   { key: '/app/assigned', icon: <FiInbox />, label: 'Việc được giao' },
@@ -112,16 +123,19 @@ export default function UserLayout() {
 
   useRealtimeRefresh(loadNotifications, 'notification')
 
-  const openNotification = async (notification) => {
+  const openNotification = (notification) => {
     if (!notification.is_read) {
-      await markNotificationReadApi(notification.id)
       setNotifications((items) =>
         items.map((item) => item.id === notification.id ? { ...item, is_read: true } : item),
       )
+      markNotificationReadApi(notification.id).catch(loadNotifications)
     }
+
     if (notification.reference_type === 'TASK' && notification.reference_id) {
+      const tab = taskNotificationTabs[notification.notification_type]
+      const query = tab ? `?tab=${tab}` : ''
       setNotificationOpen(false)
-      navigate(`/app/tasks/${notification.reference_id}`)
+      navigate(`/app/tasks/${notification.reference_id}${query}`)
     } else if (
       notification.reference_type === 'INITIATIVE'
       && notification.reference_id

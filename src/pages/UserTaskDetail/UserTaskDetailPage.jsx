@@ -37,7 +37,7 @@ import {
   FiUser,
   FiX,
 } from 'react-icons/fi'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   approveSubmissionApi,
   cancelTaskApi,
@@ -89,6 +89,8 @@ const actionLabels = {
   SUBTASK_CREATED: 'Đã tạo công việc con',
 }
 
+const workspaceTabs = new Set(['submissions', 'comments', 'subtasks', 'history'])
+
 const formatFileSize = (value) => {
   if (!Number.isFinite(value)) return '-'
   if (value < 1024) return `${value} B`
@@ -100,6 +102,7 @@ export default function UserTaskDetailPage() {
   const { taskId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [commentForm] = Form.useForm()
   const [actionForm] = Form.useForm()
   const commentListRef = useRef(null)
@@ -118,6 +121,22 @@ export default function UserTaskDetailPage() {
   const [actionModal, setActionModal] = useState(null)
   const [submissionFiles, setSubmissionFiles] = useState([])
   const [subtaskCreationFiles, setSubtaskCreationFiles] = useState([])
+  const requestedWorkspaceTab = searchParams.get('tab')
+  const activeWorkspaceTab = workspaceTabs.has(requestedWorkspaceTab)
+    ? requestedWorkspaceTab
+    : 'submissions'
+
+  const changeWorkspaceTab = (tab) => {
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      if (tab === 'submissions') {
+        next.delete('tab')
+      } else {
+        next.set('tab', tab)
+      }
+      return next
+    }, { replace: true })
+  }
 
   const loadDetail = useCallback(async () => {
     setError('')
@@ -541,6 +560,8 @@ export default function UserTaskDetailPage() {
 
           <section className={styles.workspace}>
             <Tabs
+              activeKey={activeWorkspaceTab}
+              onChange={changeWorkspaceTab}
               items={[
                 {
                   key: 'submissions',
