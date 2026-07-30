@@ -220,6 +220,16 @@ export default function UserTaskDetailPage() {
   const isCreator = task?.created_by === user.id
   const isReviewer = task?.reviewer_id === user.id
   const latestSubmission = submissions.at(-1)
+  const canUploadToSubmission = (submission) => (
+    isAssignee
+    && submission.submitted_by === user.id
+    && !submission.is_withdrawn
+    && submission.id === latestSubmission?.id
+    && (
+      (task.requires_review && task.status === 'SUBMITTED')
+      || (!task.requires_review && task.status === 'COMPLETED')
+    )
+  )
   const taskAttachments = useMemo(
     () => attachments.filter((attachment) => !attachment.submission_id),
     [attachments],
@@ -593,7 +603,7 @@ export default function UserTaskDetailPage() {
                               {renderAttachmentList(submissionAttachments)}
                             </div>
                           )}
-                          {!submission.is_withdrawn && (
+                          {canUploadToSubmission(submission) && (
                             <Upload
                               showUploadList={false}
                               beforeUpload={(file) => uploadAttachment(file, submission.id)}
