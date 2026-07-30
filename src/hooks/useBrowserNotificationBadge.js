@@ -9,57 +9,40 @@ function updateFavicon(unreadCount) {
 
   if (!favicon || unreadCount <= 0) {
     if (favicon) favicon.href = FAVICON_PATH
-    return () => {}
+    return
   }
 
-  let cancelled = false
-  const image = new Image()
+  const size = 64
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
 
-  image.onload = () => {
-    if (cancelled) return
+  if (!context) return
 
-    const size = 64
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
+  canvas.width = size
+  canvas.height = size
 
-    if (!context) return
+  const label = unreadCount > 99 ? '99+' : String(unreadCount)
+  context.beginPath()
+  context.arc(size / 2, size / 2, 30, 0, Math.PI * 2)
+  context.fillStyle = '#ee4d2d'
+  context.fill()
+  context.lineWidth = 3
+  context.strokeStyle = '#ffffff'
+  context.stroke()
 
-    canvas.width = size
-    canvas.height = size
-    context.drawImage(image, 0, 0, size, size)
+  context.fillStyle = '#ffffff'
+  context.font = `800 ${label.length > 2 ? 25 : label.length > 1 ? 32 : 39}px Arial, sans-serif`
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.fillText(label, size / 2, size / 2 + 2)
 
-    const label = unreadCount > 99 ? '99+' : String(unreadCount)
-    context.beginPath()
-    context.arc(47, 17, 16, 0, Math.PI * 2)
-    context.fillStyle = '#ee4d2d'
-    context.fill()
-    context.lineWidth = 3
-    context.strokeStyle = '#ffffff'
-    context.stroke()
-
-    context.fillStyle = '#ffffff'
-    context.font = `700 ${label.length > 2 ? 13 : 16}px Arial, sans-serif`
-    context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    context.fillText(label, 47, 18)
-
-    favicon.href = canvas.toDataURL('image/png')
-  }
-
-  image.src = FAVICON_PATH
-
-  return () => {
-    cancelled = true
-  }
+  favicon.href = canvas.toDataURL('image/png')
 }
 
 export function useBrowserNotificationBadge(unreadCount) {
   useEffect(() => {
-    const visibleCount = unreadCount > 99 ? '99+' : unreadCount
-    const standardTitle = unreadCount > 0
-      ? `(${visibleCount}) ${APP_TITLE}`
-      : APP_TITLE
-    const alertTitle = `(${visibleCount}) Có thông báo mới`
+    const standardTitle = APP_TITLE
+    const alertTitle = 'Có thông báo mới'
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let showAlertTitle = false
 
@@ -73,7 +56,7 @@ export function useBrowserNotificationBadge(unreadCount) {
         : standardTitle
     }
 
-    const cleanupFavicon = updateFavicon(unreadCount)
+    updateFavicon(unreadCount)
     setCurrentTitle()
 
     const intervalId = unreadCount > 0 && !reduceMotion
@@ -93,7 +76,6 @@ export function useBrowserNotificationBadge(unreadCount) {
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      cleanupFavicon()
       if (intervalId) window.clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
