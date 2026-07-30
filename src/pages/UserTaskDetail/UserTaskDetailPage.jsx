@@ -218,6 +218,7 @@ export default function UserTaskDetailPage() {
 
   const isAssignee = task?.assigned_to === user.id
   const isCreator = task?.created_by === user.id
+  const isReviewer = task?.reviewer_id === user.id
   const latestSubmission = submissions.at(-1)
   const taskAttachments = useMemo(
     () => attachments.filter((attachment) => !attachment.submission_id),
@@ -470,10 +471,10 @@ export default function UserTaskDetailPage() {
     if (isAssignee && task.status === 'SUBMITTED' && latestSubmission && !latestSubmission.is_withdrawn) {
       items.push({ key: 'withdraw', label: 'Thu hồi kết quả', icon: <FiRotateCcw />, modal: 'withdraw' })
     }
-    if (isCreator && task.status === 'SUBMITTED' && latestSubmission) {
+    if (isReviewer && task.status === 'SUBMITTED' && latestSubmission) {
       items.push({ key: 'review', label: 'Bắt đầu duyệt', icon: <FiClock />, primary: true, run: () => runAction(() => startSubmissionReviewApi(latestSubmission.id)) })
     }
-    if (isCreator && task.status === 'REVIEWING' && latestSubmission) {
+    if (isReviewer && task.status === 'REVIEWING' && latestSubmission) {
       items.push({ key: 'approve', label: 'Duyệt hoàn thành', icon: <FiCheck />, primary: true, modal: 'approve' })
       items.push({ key: 'reject', label: 'Yêu cầu làm lại', icon: <FiX />, danger: true, modal: 'reject' })
     }
@@ -482,7 +483,7 @@ export default function UserTaskDetailPage() {
       items.push({ key: 'cancel', label: 'Hủy task', icon: <FiSlash />, danger: true, modal: 'cancel' })
     }
     return items
-  }, [task, isAssignee, isCreator, latestSubmission, taskId, runAction])
+  }, [task, isAssignee, isCreator, isReviewer, latestSubmission, taskId, runAction])
 
   if (loading) return <div className={styles.page}><Skeleton active paragraph={{ rows: 12 }} /></div>
 
@@ -546,11 +547,19 @@ export default function UserTaskDetailPage() {
 
           <section className={styles.metaGrid}>
             <div>
-              <span>{isCreator ? 'Người thực hiện' : 'Người giao'}</span>
+              <span>
+                {task.is_personal
+                  ? isCreator ? 'Người duyệt' : 'Người thực hiện'
+                  : isCreator ? 'Người thực hiện' : 'Người giao'}
+              </span>
               <strong>
-                {isCreator
-                  ? task.assigned_to_name || 'Chưa xác định'
-                  : task.created_by_name || 'Chưa xác định'}
+                {task.is_personal
+                  ? isCreator
+                    ? task.reviewer_name || 'Không cần duyệt'
+                    : task.assigned_to_name || 'Chưa xác định'
+                  : isCreator
+                    ? task.assigned_to_name || 'Chưa xác định'
+                    : task.created_by_name || 'Chưa xác định'}
               </strong>
             </div>
             <div><span>Ngày giao</span><strong>{formatDateTime(task.assigned_at)}</strong></div>
@@ -617,8 +626,10 @@ export default function UserTaskDetailPage() {
                             ? 'Bạn'
                             : comment.author_name
                               || (comment.user_id === task.created_by
-                                ? 'Người giao việc'
-                                : 'Người thực hiện')
+                                ? task.is_personal ? 'Người thực hiện' : 'Người giao việc'
+                                : comment.user_id === task.reviewer_id
+                                  ? 'Người duyệt'
+                                  : 'Người thực hiện')
                           return (
                             <article key={comment.id} className={`${styles.comment} ${mine ? styles.mine : ''}`}>
                               <Avatar size={34}>{author.charAt(0)}</Avatar>

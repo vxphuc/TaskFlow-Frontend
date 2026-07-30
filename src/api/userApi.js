@@ -2,6 +2,9 @@ import axiosClient from './axiosClient'
 
 export const getUsersApi = (params) => axiosClient.get('/api/users', { params })
 
+export const getPersonalTaskReviewersApi = () =>
+  axiosClient.get('/api/users/reviewers')
+
 export const createUserApi = (data) => axiosClient.post('/api/users', data)
 
 export const updateUserApi = (userId, data) =>

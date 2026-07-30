@@ -43,6 +43,10 @@ const UserCreatedTasksPage = lazyWithRetry(
   () => import('./pages/UserCreatedTasks/UserCreatedTasksPage'),
   'user-created-tasks',
 )
+const UserPersonalTasksPage = lazyWithRetry(
+  () => import('./pages/UserPersonalTasks/UserPersonalTasksPage'),
+  'user-personal-tasks',
+)
 const UserGuidePage = lazyWithRetry(
   () => import('./pages/UserGuide/UserGuidePage'),
   'user-guide',
@@ -109,6 +113,7 @@ function App() {
               <Route path="/app" element={<UserDashboardPage />} />
               <Route path="/app/assigned" element={<UserAssignedTasksPage />} />
               <Route path="/app/created" element={<UserCreatedTasksPage />} />
+              <Route path="/app/personal" element={<UserPersonalTasksPage />} />
               <Route path="/app/team" element={<UserTeamPage />} />
               <Route path="/app/reports" element={<UserReportsPage />} />
               <Route path="/app/recurring" element={<UserRecurringPage />} />

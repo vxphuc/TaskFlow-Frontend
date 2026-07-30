@@ -1,9 +1,14 @@
-import { Alert, Button, Progress, Skeleton } from 'antd'
+import { Alert, Button, Progress, Skeleton, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiArrowRight, FiCheckCircle, FiClock, FiInbox, FiSend } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { getMyMonthlyReportApi } from '../../api/reportApi'
-import { getMyAssignedTasksApi, getMyCreatedTasksApi } from '../../api/taskApi'
+import {
+  getMyAssignedTasksApi,
+  getMyCreatedTasksApi,
+  getPersonalReviewQueueApi,
+  getPersonalTasksApi,
+} from '../../api/taskApi'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel } from '../../utils/task'
@@ -20,14 +25,24 @@ export default function UserDashboardPage() {
     setError('')
 
     try {
-      const [assignedRes, createdRes, reportRes] = await Promise.all([
+      const [
+        assignedRes,
+        createdRes,
+        personalRes,
+        reviewRes,
+        reportRes,
+      ] = await Promise.all([
         getMyAssignedTasksApi(),
         getMyCreatedTasksApi(),
+        getPersonalTasksApi(),
+        getPersonalReviewQueueApi(),
         getMyMonthlyReportApi(now.getFullYear(), now.getMonth() + 1),
       ])
       setData({
         assigned: assignedRes.data.tasks || [],
         created: createdRes.data.tasks || [],
+        personal: personalRes.data.tasks || [],
+        review: reviewRes.data.tasks || [],
         report: reportRes.data.report || {},
       })
     } catch (err) {
@@ -43,10 +58,10 @@ export default function UserDashboardPage() {
 
   const stats = useMemo(() => {
     if (!data) return []
-    const active = data.assigned.filter((task) =>
+    const active = [...data.assigned, ...data.personal].filter((task) =>
       ['TODO', 'IN_PROGRESS', 'REJECTED'].includes(task.status),
     ).length
-    const waiting = data.created.filter((task) =>
+    const waiting = [...data.created, ...data.review].filter((task) =>
       ['SUBMITTED', 'REVIEWING'].includes(task.status),
     ).length
     const completed = data.report.summary?.completed_tasks || 0
@@ -59,9 +74,11 @@ export default function UserDashboardPage() {
     ]
   }, [data])
 
-  const focusTasks = data?.assigned
+  const focusTasks = data
+    ? [...data.assigned, ...data.personal]
     .filter((task) => !['COMPLETED', 'CANCELLED'].includes(task.status))
-    .slice(0, 5) || []
+    .slice(0, 5)
+    : []
   const completionRate = data?.report.summary?.completion_rate || 0
 
   return (
@@ -72,9 +89,12 @@ export default function UserDashboardPage() {
           <h1>Chào {user.full_name}</h1>
           <p>Tập trung vào công việc cần xử lý và các kết quả đang chờ phản hồi.</p>
         </div>
-        <Button type="primary" icon={<FiSend />} onClick={() => navigate('/app/created')}>
-          Giao công việc
-        </Button>
+        <Space wrap>
+          <Button onClick={() => navigate('/app/personal')}>Việc cá nhân</Button>
+          <Button type="primary" icon={<FiSend />} onClick={() => navigate('/app/created')}>
+            Giao công việc
+          </Button>
+        </Space>
       </header>
 
       {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
@@ -110,7 +130,16 @@ export default function UserDashboardPage() {
                       <strong>{task.title}</strong>
                       <small>{getPriorityLabel(task.priority)} · Hạn {formatDateTime(task.due_date)}</small>
                       <small className={styles.taskPeople}>
-                        <span><FiSend /> Người giao: {task.created_by_name || 'Chưa xác định'}</span>
+                        {task.is_personal ? (
+                          <span>
+                            <FiCheckCircle />
+                            {task.requires_review
+                              ? `Người duyệt: ${task.reviewer_name || 'Chưa xác định'}`
+                              : 'Việc cá nhân không cần duyệt'}
+                          </span>
+                        ) : (
+                          <span><FiSend /> Người giao: {task.created_by_name || 'Chưa xác định'}</span>
+                        )}
                       </small>
                     </span>
                     <span className={`${styles.status} ${styles[task.status.toLowerCase()]}`}>

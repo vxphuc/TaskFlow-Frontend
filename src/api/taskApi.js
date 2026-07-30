@@ -9,6 +9,15 @@ export const getMyAssignedSubtasksApi = (params) =>
 export const getMyCreatedTasksApi = (params) =>
   axiosClient.get('/api/tasks/my-created', { params })
 
+export const getPersonalTasksApi = (params) =>
+  axiosClient.get('/api/tasks/personal', { params })
+
+export const getPersonalReviewQueueApi = () =>
+  axiosClient.get('/api/tasks/review-queue')
+
+export const createPersonalTaskApi = (data) =>
+  axiosClient.post('/api/tasks/personal', data)
+
 export const createTaskApi = (data) =>
   axiosClient.post('/api/tasks', data)
 

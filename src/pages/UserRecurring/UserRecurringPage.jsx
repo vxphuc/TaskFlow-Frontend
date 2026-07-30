@@ -34,7 +34,7 @@ import {
   setRecurringTemplateActiveApi,
   updateRecurringTemplateApi,
 } from '../../api/recurringTaskApi'
-import { getUsersApi } from '../../api/userApi'
+import { getPersonalTaskReviewersApi, getUsersApi } from '../../api/userApi'
 import { useAuth } from '../../contexts/useAuth'
 import { getPriorityLabel, getStatusLabel, priorityOptions } from '../../utils/task'
 import styles from './UserRecurringPage.module.css'
@@ -74,6 +74,7 @@ export default function UserRecurringPage() {
   const [generateForm] = Form.useForm()
   const [templates, setTemplates] = useState([])
   const [assignees, setAssignees] = useState([])
+  const [reviewers, setReviewers] = useState([])
   const [generatedTasks, setGeneratedTasks] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [editingTemplate, setEditingTemplate] = useState(null)
@@ -86,13 +87,15 @@ export default function UserRecurringPage() {
   const [generateOpen, setGenerateOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const selectedFrequency = Form.useWatch('frequency', templateForm)
+  const selectedAssignee = Form.useWatch('assigned_to', templateForm)
 
   const loadPage = useCallback(async () => {
     setLoading(true)
     try {
-      const [templateResponse, userResponse] = await Promise.all([
+      const [templateResponse, userResponse, reviewerResponse] = await Promise.all([
         getRecurringTemplatesApi(),
         getUsersApi({ is_active: true }),
+        getPersonalTaskReviewersApi().catch(() => ({ data: { reviewers: [] } })),
       ])
       setTemplates(
         Array.isArray(templateResponse.data.templates)
@@ -102,6 +105,11 @@ export default function UserRecurringPage() {
       setAssignees(
         Array.isArray(userResponse.data.users)
           ? userResponse.data.users
+          : [],
+      )
+      setReviewers(
+        Array.isArray(reviewerResponse.data.reviewers)
+          ? reviewerResponse.data.reviewers
           : [],
       )
     } catch (error) {
@@ -141,6 +149,8 @@ export default function UserRecurringPage() {
       frequency: 'MONTHLY',
       generate_day: 1,
       due_after_days: 4,
+      assigned_to: user.id,
+      reviewer_id: undefined,
     })
     setFormOpen(true)
   }
@@ -151,6 +161,7 @@ export default function UserRecurringPage() {
       title: template.title,
       description: template.description,
       assigned_to: template.assigned_to,
+      reviewer_id: template.reviewer_id || undefined,
       frequency: template.frequency,
       generate_day: template.generate_day,
       due_after_days: template.due_after_days,
@@ -245,8 +256,8 @@ export default function UserRecurringPage() {
       key: 'role',
       width: 125,
       render: (_, row) => (
-        <Tag color={row.created_by === user.id ? 'green' : 'blue'}>
-          {row.created_by === user.id ? 'Tôi tạo' : 'Được giao'}
+        <Tag color={row.is_personal ? 'green' : row.created_by === user.id ? 'cyan' : 'blue'}>
+          {row.is_personal ? 'Cá nhân' : row.created_by === user.id ? 'Tôi tạo' : 'Được giao'}
         </Tag>
       ),
     },
@@ -256,6 +267,13 @@ export default function UserRecurringPage() {
       key: 'assignee',
       width: 180,
       render: (value) => usersById[value]?.full_name || 'Nhân sự hiện tại',
+    },
+    {
+      title: 'Người duyệt',
+      dataIndex: 'reviewer_name',
+      key: 'reviewer',
+      width: 170,
+      render: (value, row) => row.requires_review ? value || 'Chưa xác định' : 'Không cần duyệt',
     },
     {
       title: 'Chu kỳ',
@@ -377,7 +395,7 @@ export default function UserRecurringPage() {
           <h1>Task định kỳ</h1>
           <p>Tạo công việc lặp lại hằng ngày, hằng tuần hoặc hằng tháng.</p>
         </div>
-        <Button type="primary" icon={<FiPlus />} onClick={openCreate} disabled={!assignees.length}>
+        <Button type="primary" icon={<FiPlus />} onClick={openCreate}>
           Tạo mẫu
         </Button>
       </header>
@@ -409,7 +427,7 @@ export default function UserRecurringPage() {
           dataSource={filteredTemplates}
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: false }}
-          scroll={{ x: 1160 }}
+          scroll={{ x: 1330 }}
           locale={{ emptyText: <Empty description="Chưa có mẫu task định kỳ" /> }}
         />
       </section>
@@ -432,12 +450,36 @@ export default function UserRecurringPage() {
             <Select
               showSearch
               optionFilterProp="label"
-              options={assignees.map((item) => ({
-                value: item.id,
-                label: `${item.full_name} · ${item.phone}`,
-              }))}
+              onChange={() => templateForm.setFieldValue('reviewer_id', undefined)}
+              options={[
+                { value: user.id, label: `${user.full_name} · Bản thân` },
+                ...assignees
+                  .filter((item) => item.id !== user.id)
+                  .map((item) => ({
+                    value: item.id,
+                    label: `${item.full_name} · ${item.phone}`,
+                  })),
+              ]}
             />
           </Form.Item>
+          {selectedAssignee === user.id && (
+            <Form.Item
+              name="reviewer_id"
+              label="Người duyệt kết quả"
+              extra="Để trống nếu task tự hoàn thành ngay sau khi bạn gửi kết quả."
+            >
+              <Select
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                placeholder="Không cần duyệt"
+                options={reviewers.map((reviewer) => ({
+                  value: reviewer.id,
+                  label: `${reviewer.full_name} · ${reviewer.phone}`,
+                }))}
+              />
+            </Form.Item>
+          )}
           <Form.Item
             name="frequency"
             label="Chu kỳ lặp lại"

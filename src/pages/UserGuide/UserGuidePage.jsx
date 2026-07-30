@@ -11,6 +11,7 @@ import {
   FiMessageSquare,
   FiRepeat,
   FiSend,
+  FiUserCheck,
   FiUserPlus,
   FiZap,
 } from 'react-icons/fi'
@@ -51,6 +52,23 @@ const guides = [
       ['Bàn giao tài khoản', 'Sau khi tạo thành công, cung cấp thông tin đăng nhập và yêu cầu nhân sự đổi mật khẩu ngay.'],
     ],
     note: 'Nhân sự mới tự động thuộc phòng ban hiện tại và báo cáo trực tiếp cho người tạo tài khoản.',
+  },
+  {
+    id: 'personal-task',
+    icon: FiUserCheck,
+    title: 'Tự giao việc cho bản thân',
+    audience: 'Dành cho công việc cá nhân hoặc công việc mặc định',
+    summary: 'Tự lập task, theo dõi kết quả và tùy chọn nhờ cấp trên duyệt khi cần xác nhận.',
+    href: '/app/personal',
+    action: 'Đến Việc cá nhân',
+    steps: [
+      ['Mở Việc cá nhân', 'Chọn Việc cá nhân trong menu và bấm Tạo việc cá nhân.'],
+      ['Nhập nội dung', 'Điền tiêu đề, yêu cầu, mức ưu tiên, deadline và file đầu vào nếu có.'],
+      ['Chọn cách hoàn thành', 'Để trống Người duyệt nếu task tự hoàn thành sau khi gửi kết quả, hoặc chọn một cấp trên cùng phòng ban.'],
+      ['Thực hiện công việc', 'Mở task, bấm Bắt đầu, trao đổi khi cần và gửi kết quả như một task thông thường.'],
+      ['Theo dõi việc cần duyệt', 'Tab Tôi duyệt hiển thị các việc cá nhân mà cấp dưới nhờ bạn xác nhận kết quả.'],
+    ],
+    note: 'Với việc lặp lại như đăng bài Facebook hằng ngày, hãy tạo mẫu tại Task định kỳ và chọn Bản thân là người thực hiện.',
   },
   {
     id: 'assigned-task',
@@ -127,8 +145,9 @@ const guides = [
     href: '/app/recurring',
     action: 'Đến Task định kỳ',
     steps: [
-      ['Tạo mẫu', 'Chọn Tạo mẫu và nhập yêu cầu, người thực hiện, ưu tiên.'],
+      ['Tạo mẫu', 'Chọn Tạo mẫu và nhập yêu cầu, người thực hiện, ưu tiên. Có thể chọn Bản thân cho việc cá nhân lặp lại.'],
       ['Chọn chu kỳ', 'Chọn Hằng ngày, Hằng tuần hoặc Hằng tháng và ngày sinh task tương ứng.'],
+      ['Chọn người duyệt', 'Khi tự thực hiện, có thể để trống để tự hoàn thành hoặc chọn cấp trên duyệt kết quả.'],
       ['Thiết lập hạn xử lý', 'Nhập số ngày hoàn thành tính từ ngày task được sinh.'],
       ['Quản lý mẫu', 'Có thể chỉnh sửa, tạm ngưng, kích hoạt và xem các task đã được tạo.'],
       ['Sinh thử có kiểm soát', 'Dùng thao tác sinh task cho kỳ khi cần kiểm tra một chu kỳ cụ thể.'],
