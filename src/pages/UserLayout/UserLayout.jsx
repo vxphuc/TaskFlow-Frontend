@@ -7,10 +7,11 @@ import {
   Empty,
   Layout,
   Menu,
+  notification,
   Spin,
   Tooltip,
 } from 'antd'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   FiBell,
   FiBarChart2,
@@ -74,6 +75,8 @@ export default function UserLayout() {
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationLoading, setNotificationLoading] = useState(false)
+  const knownNotificationIds = useRef(null)
+  const [notificationApi, notificationContextHolder] = notification.useNotification()
   const realtimeStatus = useRealtimeStatus()
 
   const selectedKey = useMemo(() => {
@@ -100,17 +103,57 @@ export default function UserLayout() {
     setNotificationLoading(true)
     try {
       const response = await getNotificationsApi()
-      setNotifications(response.data.notifications || [])
+      const nextNotifications = response.data.notifications || []
+      const previousIds = knownNotificationIds.current
+
+      if (previousIds) {
+        const newUnreadNotifications = nextNotifications.filter(
+          (item) => !item.is_read && !previousIds.has(item.id),
+        )
+        const latestNotification = newUnreadNotifications[0]
+
+        if (latestNotification) {
+          notificationApi.open({
+            key: `taskflow-notification-${latestNotification.id}`,
+            className: styles.notificationToast,
+            icon: <FiBell className={styles.notificationToastIcon} />,
+            message: latestNotification.title,
+            description: newUnreadNotifications.length > 1
+              ? `${latestNotification.message} Và ${newUnreadNotifications.length - 1} thông báo mới khác.`
+              : latestNotification.message,
+            duration: 7,
+            placement: 'topRight',
+            onClick: () => setNotificationOpen(true),
+          })
+        }
+      }
+
+      knownNotificationIds.current = new Set(nextNotifications.map((item) => item.id))
+      setNotifications(nextNotifications)
     } finally {
       setNotificationLoading(false)
     }
-  }, [])
+  }, [notificationApi])
 
   useEffect(() => {
     Promise.resolve().then(loadNotifications)
   }, [loadNotifications])
 
   useRealtimeRefresh(loadNotifications, 'notification')
+
+  useEffect(() => {
+    const refreshHiddenNotification = (event) => {
+      if (
+        document.visibilityState !== 'visible'
+        && event.detail?.resource === 'notification'
+      ) {
+        loadNotifications()
+      }
+    }
+
+    window.addEventListener('taskflow:update', refreshHiddenNotification)
+    return () => window.removeEventListener('taskflow:update', refreshHiddenNotification)
+  }, [loadNotifications])
 
   const openNotification = async (notification) => {
     if (!notification.is_read) {
@@ -170,7 +213,9 @@ export default function UserLayout() {
   ]
 
   return (
-    <Layout className={styles.shell}>
+    <>
+      {notificationContextHolder}
+      <Layout className={styles.shell}>
       <Sider width={244} className={styles.sider}>
         <Brand />
         <div className={styles.navLabel}>KHÔNG GIAN LÀM VIỆC</div>
@@ -213,16 +258,18 @@ export default function UserLayout() {
               {realtimeStatus === 'connected' ? <FiWifi /> : <FiWifiOff />}
             </span>
           </Tooltip>
-          <Tooltip title="Thông báo">
-            <Badge count={unreadCount} size="small">
-              <Button
-                className={styles.notificationButton}
-                type="text"
-                icon={<FiBell />}
-                onClick={() => setNotificationOpen(true)}
-                aria-label="Thông báo"
-              />
-            </Badge>
+          <Tooltip title={unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Thông báo'}>
+            <span className={unreadCount > 0 ? styles.notificationAlert : undefined}>
+              <Badge count={unreadCount} size="small">
+                <Button
+                  className={styles.notificationButton}
+                  type="text"
+                  icon={<FiBell />}
+                  onClick={() => setNotificationOpen(true)}
+                  aria-label={unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Thông báo'}
+                />
+              </Badge>
+            </span>
           </Tooltip>
           <Dropdown menu={{ items: accountItems }} trigger={['click']} placement="bottomRight">
             <button className={styles.account} type="button">
@@ -284,6 +331,7 @@ export default function UserLayout() {
         )}
       </Drawer>
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
-    </Layout>
+      </Layout>
+    </>
   )
 }
