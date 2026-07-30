@@ -37,6 +37,7 @@ import {
   markNotificationReadApi,
 } from '../../api/notificationApi'
 import { useAuth } from '../../contexts/useAuth'
+import { useBrowserNotificationBadge } from '../../hooks/useBrowserNotificationBadge'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { useRealtimeStatus } from '../../hooks/useRealtimeStatus'
 import { formatDateTime } from '../../utils/task'
@@ -44,7 +45,6 @@ import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './UserLayout.module.css'
 
 const { Header, Sider, Content } = Layout
-const APP_TITLE = 'Quản trị công việc'
 
 const navigation = [
   { key: '/app', icon: <FiGrid />, label: 'Tổng quan' },
@@ -87,17 +87,7 @@ export default function UserLayout() {
   }, [location.pathname])
 
   const unreadCount = notifications.filter((item) => !item.is_read).length
-
-  useEffect(() => {
-    const visibleCount = unreadCount > 99 ? '99+' : unreadCount
-    document.title = unreadCount > 0
-      ? `(${visibleCount}) ${APP_TITLE}`
-      : APP_TITLE
-  }, [unreadCount])
-
-  useEffect(() => () => {
-    document.title = APP_TITLE
-  }, [])
+  useBrowserNotificationBadge(unreadCount)
 
   const loadNotifications = useCallback(async () => {
     setNotificationLoading(true)

@@ -715,7 +715,12 @@ export default function UserTaskDetailPage() {
           )}
           {actionModal === 'deadline' && (
             <Form.Item name="due_date" label="Deadline mới" initialValue={task?.due_date ? dayjs(task.due_date) : null} rules={[{ required: true, message: 'Chọn deadline mới' }]}>
-              <DatePicker showTime format="DD/MM/YYYY HH:mm" className={styles.fullWidth} />
+              <DatePicker
+                showTime
+                needConfirm={false}
+                format="DD/MM/YYYY HH:mm"
+                className={styles.fullWidth}
+              />
             </Form.Item>
           )}
           {actionModal === 'subtask' && (
@@ -742,7 +747,12 @@ export default function UserTaskDetailPage() {
                   <Select options={priorityOptions} />
                 </Form.Item>
                 <Form.Item name="due_date" label="Deadline">
-                  <DatePicker showTime format="DD/MM/YYYY HH:mm" className={styles.fullWidth} />
+                  <DatePicker
+                    showTime
+                    needConfirm={false}
+                    format="DD/MM/YYYY HH:mm"
+                    className={styles.fullWidth}
+                  />
                 </Form.Item>
               </div>
               <Form.Item label="File hoặc hình ảnh đính kèm">

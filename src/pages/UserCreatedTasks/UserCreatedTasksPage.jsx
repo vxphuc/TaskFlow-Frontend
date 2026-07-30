@@ -271,7 +271,12 @@ export default function UserCreatedTasksPage() {
               <Select options={priorityOptions} />
             </Form.Item>
             <Form.Item name="due_date" label="Deadline">
-              <DatePicker showTime format="DD/MM/YYYY HH:mm" placeholder="Chọn thời hạn" />
+              <DatePicker
+                showTime
+                needConfirm={false}
+                format="DD/MM/YYYY HH:mm"
+                placeholder="Chọn thời hạn"
+              />
             </Form.Item>
           </div>
           <Form.Item label="File hoặc hình ảnh đính kèm">

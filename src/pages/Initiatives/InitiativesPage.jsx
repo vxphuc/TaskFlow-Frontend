@@ -492,6 +492,7 @@ export default function InitiativesPage() {
               <Form.Item name="due_date" label="Deadline">
                 <DatePicker
                   showTime
+                  needConfirm={false}
                   format="DD/MM/YYYY HH:mm"
                   className={styles.fullWidth}
                   placeholder="Chọn thời hạn"
