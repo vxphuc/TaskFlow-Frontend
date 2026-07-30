@@ -7,11 +7,16 @@
 .viewSwitch :global(.ant-segmented-item-selected) { color: #fff; background: #206a37; }
 .alert { margin-bottom: 18px; }
 .statGrid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
-.statCard { min-height: 110px; display: flex; align-items: center; gap: 14px; padding: 18px; border: 1px solid #dfe7e1; border-radius: 8px; background: #fff; }
-.statCard > span { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 6px; color: #206a37; background: #eaf4ed; font-size: 19px; }
+.statCard { --report-color: #4d6570; --report-soft: #edf3f5; min-height: 110px; display: flex; align-items: center; gap: 14px; padding: 16px 18px 18px; border: 1px solid #dfe7e1; border-top: 3px solid var(--report-color); border-radius: 8px; background: #fff; }
+.statCard.overview { --report-color: #4d6570; --report-soft: #edf3f5; }
+.statCard.completed { --report-color: #206a37; --report-soft: #eaf4ed; }
+.statCard.overdue { --report-color: #ee4d2d; --report-soft: #fff0ec; }
+.statCard.review { --report-color: #1677c8; --report-soft: #e8f3ff; }
+.statCard.returned { --report-color: #c76b12; --report-soft: #fff2e5; }
+.statCard > span { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 6px; color: var(--report-color); background: var(--report-soft); font-size: 19px; }
 .statCard div { display: grid; gap: 3px; }
-.statCard small { color: #69776e; }
-.statCard strong { font-size: 27px; line-height: 1.2; }
+.statCard small { color: var(--report-color); font-weight: 600; }
+.statCard strong { color: var(--report-color); font-size: 27px; line-height: 1.2; }
 .workTypeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 15px; }
 .workTypeCard { padding: 18px; border: 1px solid #dfe7e1; border-radius: 8px; background: #fff; }
 .workTypeCard header { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
@@ -22,6 +27,11 @@
 .workTypeCard > div > span { display: grid; gap: 4px; padding: 10px; border-radius: 6px; background: #f5f8f6; }
 .workTypeCard > div small { color: #718077; font-size: 11px; }
 .workTypeCard > div strong { font-size: 18px; }
+.workTypeCard > div > span[data-tone='completed'] { color: #206a37; background: #edf7f0; }
+.workTypeCard > div > span[data-tone='pending'] { color: #9a6800; background: #fff7d6; }
+.workTypeCard > div > span[data-tone='overdue'] { color: #d93f23; background: #fff0ec; }
+.workTypeCard > div > span[data-tone='review'] { color: #1677c8; background: #eaf4ff; }
+.workTypeCard > div > span[data-tone] small { color: inherit; opacity: .82; }
 .metricsGrid { display: grid; grid-template-columns: 380px minmax(0,1fr); gap: 15px; margin-top: 15px; }
 .rates, .breakdown, .section { border: 1px solid #dfe7e1; border-radius: 8px; background: #fff; }
 .rates { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 22px; }
@@ -33,6 +43,11 @@
 .breakdownGrid span { min-height: 84px; display: flex; justify-content: center; flex-direction: column; gap: 6px; padding: 13px; border-radius: 6px; background: #f5f8f6; }
 .breakdownGrid small { color: #6d7a72; }
 .breakdownGrid strong { font-size: 22px; }
+.breakdownGrid span[data-tone='pending'] { color: #9a6800; background: #fff7d6; }
+.breakdownGrid span[data-tone='review'] { color: #1677c8; background: #eaf4ff; }
+.breakdownGrid span[data-tone='submitted'] { color: #246b80; background: #eaf6f8; }
+.breakdownGrid span[data-tone='overdue'] { color: #d93f23; background: #fff0ec; }
+.breakdownGrid span[data-tone] small { color: inherit; opacity: .82; }
 .section { margin-top: 15px; padding: 22px; }
 .sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
 .sectionHeading h2 { margin-bottom: 4px; }
@@ -42,6 +57,9 @@
 .peopleHeader { min-height: 42px; color: #748179; background: #f6f8f6; font-size: 11px; font-weight: 700; }
 .personRow { min-height: 58px; border-top: 1px solid #e6ebe7; }
 .personRow span { font-variant-numeric: tabular-nums; }
+.personRow span[data-tone='completed'] { color: #206a37; font-weight: 700; }
+.personRow span[data-tone='overdue'] { color: #d93f23; font-weight: 700; }
+.personRow span[data-tone='returned'] { color: #c76b12; font-weight: 700; }
 .taskList { display: grid; gap: 8px; margin-top: 17px; }
 .taskList button { min-height: 62px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid #e0e7e2; border-radius: 6px; color: #293a30; background: #fff; cursor: pointer; text-align: left; }
 .taskList button:hover { border-color: #8eb29a; background: #f9fbf9; }

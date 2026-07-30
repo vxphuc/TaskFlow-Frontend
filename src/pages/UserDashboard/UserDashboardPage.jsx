@@ -52,10 +52,10 @@ export default function UserDashboardPage() {
     const completed = data.report.summary?.completed_tasks || 0
     const overdue = data.report.summary?.overdue_tasks || 0
     return [
-      { label: 'Cần thực hiện', value: active, note: 'Task đang chờ bạn xử lý', icon: <FiInbox /> },
-      { label: 'Chờ bạn duyệt', value: waiting, note: 'Kết quả từ người nhận việc', icon: <FiClock /> },
-      { label: 'Hoàn thành tháng này', value: completed, note: 'Theo thời điểm được giao', icon: <FiCheckCircle /> },
-      { label: 'Đang quá hạn', value: overdue, note: 'Cần ưu tiên xử lý', icon: <FiSend /> },
+      { label: 'Cần thực hiện', value: active, note: 'Task đang chờ bạn xử lý', icon: <FiInbox />, tone: 'pending' },
+      { label: 'Chờ bạn duyệt', value: waiting, note: 'Kết quả từ người nhận việc', icon: <FiClock />, tone: 'review' },
+      { label: 'Hoàn thành tháng này', value: completed, note: 'Theo thời điểm được giao', icon: <FiCheckCircle />, tone: 'completed' },
+      { label: 'Đang quá hạn', value: overdue, note: 'Cần ưu tiên xử lý', icon: <FiSend />, tone: 'overdue' },
     ]
   }, [data])
 
@@ -82,7 +82,7 @@ export default function UserDashboardPage() {
         <>
           <section className={styles.statGrid}>
             {stats.map((stat) => (
-              <article className={styles.statCard} key={stat.label}>
+              <article className={`${styles.statCard} ${styles[stat.tone]}`} key={stat.label}>
                 <span className={styles.statIcon}>{stat.icon}</span>
                 <div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div>
               </article>

@@ -70,13 +70,15 @@ export default function UserReportsPage() {
         label: view === 'assignee' ? 'Task được giao' : 'Task đã giao',
         value: view === 'assignee' ? summary.total_assigned_tasks : summary.total_created_tasks,
         icon: <FiTarget />,
+        tone: 'overview',
       },
-      { label: 'Đã hoàn thành', value: summary.completed_tasks, icon: <FiCheckCircle /> },
-      { label: 'Đang quá hạn', value: summary.overdue_tasks, icon: <FiAlertCircle /> },
+      { label: 'Đã hoàn thành', value: summary.completed_tasks, icon: <FiCheckCircle />, tone: 'completed' },
+      { label: 'Đang quá hạn', value: summary.overdue_tasks, icon: <FiAlertCircle />, tone: 'overdue' },
       {
         label: view === 'assignee' ? 'Số lần bị trả lại' : 'Đang chờ duyệt',
         value: view === 'assignee' ? summary.total_rejections : summary.waiting_review_tasks,
         icon: view === 'assignee' ? <FiRefreshCw /> : <FiClock />,
+        tone: view === 'assignee' ? 'returned' : 'review',
       },
     ]
   }, [report, summary, view])
@@ -107,7 +109,7 @@ export default function UserReportsPage() {
         <>
           <section className={styles.statGrid}>
             {stats.map((stat) => (
-              <article className={styles.statCard} key={stat.label}>
+              <article className={`${styles.statCard} ${styles[stat.tone]}`} key={stat.label}>
                 <span>{stat.icon}</span>
                 <div><small>{stat.label}</small><strong>{stat.value || 0}</strong></div>
               </article>
@@ -138,10 +140,10 @@ export default function UserReportsPage() {
                   </div>
                 </header>
                 <div>
-                  <span><small>Hoàn thành</small><strong>{item.data?.completed_tasks || 0}</strong></span>
-                  <span><small>Đang xử lý</small><strong>{item.data?.active_tasks || 0}</strong></span>
-                  <span><small>Quá hạn</small><strong>{item.data?.overdue_tasks || 0}</strong></span>
-                  <span><small>Tỷ lệ</small><strong>{item.data?.completion_rate || 0}%</strong></span>
+                  <span data-tone="completed"><small>Hoàn thành</small><strong>{item.data?.completed_tasks || 0}</strong></span>
+                  <span data-tone="pending"><small>Đang xử lý</small><strong>{item.data?.active_tasks || 0}</strong></span>
+                  <span data-tone="overdue"><small>Quá hạn</small><strong>{item.data?.overdue_tasks || 0}</strong></span>
+                  <span data-tone="review"><small>Tỷ lệ</small><strong>{item.data?.completion_rate || 0}%</strong></span>
                 </div>
               </article>
             ))}
@@ -161,10 +163,10 @@ export default function UserReportsPage() {
             <section className={styles.breakdown}>
               <h2>Cơ cấu trạng thái</h2>
               <div className={styles.breakdownGrid}>
-                <span><small>Chờ thực hiện</small><strong>{summary.todo_tasks || 0}</strong></span>
-                <span><small>Đang thực hiện</small><strong>{summary.in_progress_tasks || 0}</strong></span>
-                <span><small>Đã gửi kết quả</small><strong>{summary.submitted_tasks || 0}</strong></span>
-                <span><small>Cần làm lại</small><strong>{summary.rejected_tasks || 0}</strong></span>
+                <span data-tone="pending"><small>Chờ thực hiện</small><strong>{summary.todo_tasks || 0}</strong></span>
+                <span data-tone="review"><small>Đang thực hiện</small><strong>{summary.in_progress_tasks || 0}</strong></span>
+                <span data-tone="submitted"><small>Đã gửi kết quả</small><strong>{summary.submitted_tasks || 0}</strong></span>
+                <span data-tone="overdue"><small>Cần làm lại</small><strong>{summary.rejected_tasks || 0}</strong></span>
               </div>
             </section>
           </div>
@@ -185,9 +187,9 @@ export default function UserReportsPage() {
                       <strong>{item.full_name || 'Nhân sự'}</strong>
                       <span>{item.main_task_count || 0}</span>
                       <span>{item.subtask_count || 0}</span>
-                      <span>{item.completed_tasks}</span>
-                      <span>{item.overdue_tasks}</span>
-                      <span>{item.total_rejections}</span>
+                      <span data-tone="completed">{item.completed_tasks}</span>
+                      <span data-tone="overdue">{item.overdue_tasks}</span>
+                      <span data-tone="returned">{item.total_rejections}</span>
                     </div>
                   ))}
                 </div>
