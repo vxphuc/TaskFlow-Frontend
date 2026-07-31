@@ -8,7 +8,7 @@ import {
   FiRefreshCw,
   FiSend,
 } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import {
   getMyAssignedSubtasksApi,
   getMyAssignedTasksApi,

@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import { FiAlertTriangle, FiRefreshCw } from 'react-icons/fi'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import styles from './AppErrorBoundary.module.css'
 
 class ErrorBoundary extends Component {

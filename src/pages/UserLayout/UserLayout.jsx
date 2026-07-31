@@ -30,7 +30,7 @@ import {
   FiWifiOff,
   FiZap,
 } from 'react-icons/fi'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import {
   getNotificationsApi,
   markAllNotificationsReadApi,

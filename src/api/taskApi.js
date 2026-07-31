@@ -60,6 +60,21 @@ export const getTaskCommentsApi = (taskId) =>
 export const createTaskCommentApi = (taskId, data) =>
   axiosClient.post(`/api/tasks/${taskId}/comments`, data)
 
+export const getTaskChecklistApi = (taskId) =>
+  axiosClient.get(`/api/tasks/${taskId}/checklist`)
+
+export const createTaskChecklistItemApi = (taskId, data) =>
+  axiosClient.post(`/api/tasks/${taskId}/checklist`, data)
+
+export const updateTaskChecklistItemApi = (taskId, itemId, data) =>
+  axiosClient.patch(`/api/tasks/${taskId}/checklist/${itemId}`, data)
+
+export const toggleTaskChecklistItemApi = (taskId, itemId, data) =>
+  axiosClient.patch(`/api/tasks/${taskId}/checklist/${itemId}/toggle`, data)
+
+export const deleteTaskChecklistItemApi = (taskId, itemId) =>
+  axiosClient.delete(`/api/tasks/${taskId}/checklist/${itemId}`)
+
 export const getTaskHistoryApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}/history`)
 

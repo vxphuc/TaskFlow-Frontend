@@ -15,7 +15,7 @@ import {
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiHelpCircle, FiSearch, FiUser, FiUserPlus, FiUsers } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { getPositionsApi } from '../../api/positionApi'
 import { createUserApi, getUsersApi } from '../../api/userApi'
 import { useAuth } from '../../contexts/useAuth'

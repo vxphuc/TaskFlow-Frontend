@@ -1,7 +1,7 @@
 import { Alert, Button, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
 import { FiArrowRight, FiBriefcase, FiLayers, FiPieChart, FiRepeat, FiUserCheck, FiUsers } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getPositionsApi } from '../../api/positionApi'
 import { getUsersApi } from '../../api/userApi'

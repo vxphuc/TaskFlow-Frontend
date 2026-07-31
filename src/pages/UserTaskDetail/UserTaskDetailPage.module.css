@@ -130,6 +130,117 @@
   border-radius: 8px; 
   background: #fff; 
 }
+.tabLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.checklistPanel {
+  display: grid;
+  gap: 16px;
+  padding-top: 5px;
+}
+.checklistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.checklistHeader > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.checklistHeader > div > strong {
+  color: #24382b;
+  font-size: 16px;
+}
+.checklistHeader span {
+  color: #748078;
+  font-size: 12px;
+}
+.progressValue {
+  color: #206a37;
+  font-size: 22px;
+}
+.checklistForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #dfe7e1;
+  border-radius: 6px;
+  background: #f7f9f7;
+}
+.checklistForm :global(.ant-form-item) {
+  margin: 0;
+}
+.checklistForm :global(.ant-input),
+.checklistForm button {
+  min-height: 40px;
+}
+.checklistItems {
+  display: grid;
+  gap: 8px;
+}
+.checklistItem {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e0e7e2;
+  border-radius: 6px;
+  background: #fff;
+}
+.checklistContent {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.checklistContent strong {
+  overflow-wrap: anywhere;
+  color: #2b3d31;
+  font-size: 13px;
+}
+.checklistContent span {
+  color: #7b8780;
+  font-size: 11px;
+}
+.checklistEdit {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px 34px;
+  align-items: center;
+  gap: 4px;
+}
+.checklistEdit :global(.ant-input) {
+  min-height: 38px;
+}
+.checklistActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.checklistCompleted {
+  border-color: #cee1d3;
+  background: #f3f8f4;
+}
+.checklistCompleted .checklistContent strong {
+  color: #5f7065;
+  text-decoration: line-through;
+}
+.checklistHint {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d7a73c;
+  color: #725b24;
+  background: #fff8e8;
+  font-size: 12px;
+  line-height: 1.55;
+}
 .submissionList { 
   display: grid; 
   gap: 11px; 
@@ -339,6 +450,11 @@
   .comment > div:last-child { max-width: calc(100% - 44px); }
   .commentForm { grid-template-columns: 1fr; }
   .commentForm button { width: 100%; }
+  .checklistHeader { align-items: flex-start; }
+  .checklistForm { grid-template-columns: 1fr; }
+  .checklistForm button { width: 100%; }
+  .checklistItem { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .checklistEdit { grid-column: 2 / -1; }
   .subtaskList button { grid-template-columns: minmax(0,1fr) 16px; }
   .subtaskList .status { grid-column: 1; }
   .openIcon { grid-column: 2; grid-row: 1 / span 2; }

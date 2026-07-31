@@ -12,7 +12,7 @@ import {
   FiRepeat,
   FiUsers,
 } from 'react-icons/fi'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../contexts/useAuth'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './AdminLayout.module.css'

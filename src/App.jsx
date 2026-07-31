@@ -1,6 +1,6 @@
 import { Spin } from 'antd'
 import { Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router'
 import { useAuth } from './contexts/useAuth'
 import AdminLayout from './pages/AdminLayout/AdminLayout'
 import LoginPage from './pages/login/LoginPage'

@@ -27,7 +27,7 @@ import {
   FiX,
   FiZap,
 } from 'react-icons/fi'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import {
   approveInitiativeApi,
   createInitiativeApi,

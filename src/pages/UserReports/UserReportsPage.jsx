@@ -11,7 +11,7 @@ import {
   FiTarget,
   FiUsers,
 } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import {
   getMyAssignerMonthlyReportApi,
   getMyMonthlyReportApi,

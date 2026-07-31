@@ -1,7 +1,7 @@
 import { Alert, Button, Progress, Skeleton, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiArrowRight, FiCheckCircle, FiClock, FiInbox, FiSend } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { getMyMonthlyReportApi } from '../../api/reportApi'
 import {
   getMyAssignedTasksApi,

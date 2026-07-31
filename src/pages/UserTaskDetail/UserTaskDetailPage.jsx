@@ -2,12 +2,14 @@ import {
   Alert,
   Avatar,
   Button,
+  Checkbox,
   DatePicker,
   Empty,
   Form,
   Input,
   Modal,
   Popconfirm,
+  Progress,
   Select,
   Skeleton,
   Tabs,
@@ -24,7 +26,9 @@ import {
   FiCheck,
   FiClock,
   FiDownload,
+  FiEdit2,
   FiFile,
+  FiList,
   FiMessageSquare,
   FiPlus,
   FiPlay,
@@ -37,16 +41,19 @@ import {
   FiUser,
   FiX,
 } from 'react-icons/fi'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import {
   approveSubmissionApi,
   cancelTaskApi,
   createSubtaskApi,
+  createTaskChecklistItemApi,
   createTaskCommentApi,
   deleteAttachmentApi,
+  deleteTaskChecklistItemApi,
   downloadAttachmentApi,
   getTaskAttachmentsApi,
   getTaskCommentsApi,
+  getTaskChecklistApi,
   getTaskDetailApi,
   getTaskHistoryApi,
   getTaskSubmissionsApi,
@@ -56,6 +63,8 @@ import {
   startSubmissionReviewApi,
   startTaskApi,
   submitTaskApi,
+  toggleTaskChecklistItemApi,
+  updateTaskChecklistItemApi,
   updateTaskDeadlineApi,
   uploadSubmissionAttachmentApi,
   uploadTaskAttachmentApi,
@@ -89,7 +98,13 @@ const actionLabels = {
   SUBTASK_CREATED: 'Đã tạo công việc con',
 }
 
-const workspaceTabs = new Set(['submissions', 'comments', 'subtasks', 'history'])
+const workspaceTabs = new Set([
+  'checklist',
+  'submissions',
+  'comments',
+  'subtasks',
+  'history',
+])
 
 const formatFileSize = (value) => {
   if (!Number.isFinite(value)) return '-'
@@ -104,12 +119,23 @@ export default function UserTaskDetailPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [commentForm] = Form.useForm()
+  const [checklistForm] = Form.useForm()
   const [actionForm] = Form.useForm()
   const commentListRef = useRef(null)
   const previousCommentCountRef = useRef(0)
   const [task, setTask] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [comments, setComments] = useState([])
+  const [checklistItems, setChecklistItems] = useState([])
+  const [checklistProgress, setChecklistProgress] = useState({
+    total: 0,
+    completed: 0,
+    percentage: 0,
+  })
+  const [checklistPermissions, setChecklistPermissions] = useState({
+    can_manage: false,
+    can_toggle: false,
+  })
   const [subtasks, setSubtasks] = useState([])
   const [history, setHistory] = useState([])
   const [attachments, setAttachments] = useState([])
@@ -118,6 +144,9 @@ export default function UserTaskDetailPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [attachmentLoading, setAttachmentLoading] = useState(null)
+  const [checklistLoading, setChecklistLoading] = useState(null)
+  const [editingChecklistItem, setEditingChecklistItem] = useState(null)
+  const [checklistEditValue, setChecklistEditValue] = useState('')
   const [actionModal, setActionModal] = useState(null)
   const [submissionFiles, setSubmissionFiles] = useState([])
   const [subtaskCreationFiles, setSubtaskCreationFiles] = useState([])
@@ -145,6 +174,7 @@ export default function UserTaskDetailPage() {
         taskRes,
         submissionsRes,
         commentsRes,
+        checklistRes,
         subtasksRes,
         historyRes,
         attachmentRes,
@@ -152,6 +182,7 @@ export default function UserTaskDetailPage() {
         getTaskDetailApi(taskId),
         getTaskSubmissionsApi(taskId),
         getTaskCommentsApi(taskId),
+        getTaskChecklistApi(taskId),
         getTaskSubtasksApi(taskId),
         getTaskHistoryApi(taskId),
         getTaskAttachmentsApi(taskId),
@@ -159,6 +190,16 @@ export default function UserTaskDetailPage() {
       setTask(taskRes.data.task)
       setSubmissions(submissionsRes.data.submissions || [])
       setComments(commentsRes.data.comments || [])
+      setChecklistItems(checklistRes.data.items || [])
+      setChecklistProgress(checklistRes.data.progress || {
+        total: 0,
+        completed: 0,
+        percentage: 0,
+      })
+      setChecklistPermissions(checklistRes.data.permissions || {
+        can_manage: false,
+        can_toggle: false,
+      })
       setSubtasks(subtasksRes.data.subtasks || [])
       setHistory(historyRes.data.logs || [])
       setAttachments(attachmentRes.data.attachments || [])
@@ -182,14 +223,36 @@ export default function UserTaskDetailPage() {
     }
   }, [taskId])
 
+  const refreshChecklist = useCallback(async () => {
+    try {
+      const response = await getTaskChecklistApi(taskId)
+      setChecklistItems(response.data.items || [])
+      setChecklistProgress(response.data.progress || {
+        total: 0,
+        completed: 0,
+        percentage: 0,
+      })
+      setChecklistPermissions(response.data.permissions || {
+        can_manage: false,
+        can_toggle: false,
+      })
+    } catch {
+      // The fallback detail refresh owns the user-facing error state.
+    }
+  }, [taskId])
+
   const refreshRealtimeDetail = useCallback((event) => {
     if (event?.action === 'COMMENT_CREATED') {
       refreshComments()
       return
     }
+    if (event?.action?.startsWith('CHECKLIST_')) {
+      refreshChecklist()
+      return
+    }
 
     loadDetail()
-  }, [loadDetail, refreshComments])
+  }, [loadDetail, refreshChecklist, refreshComments])
 
   useRealtimeRefresh(refreshRealtimeDetail, 'task')
 
@@ -355,6 +418,68 @@ export default function UserTaskDetailPage() {
   const sendComment = async ({ content }) => {
     await runAction(() => createTaskCommentApi(taskId, { content }))
     commentForm.resetFields()
+  }
+
+  const runChecklistAction = async (key, callback) => {
+    setChecklistLoading(key)
+    setError('')
+    try {
+      await callback()
+      await refreshChecklist()
+      return true
+    } catch (err) {
+      setError(
+        err.response?.data?.message
+        || 'Không thể cập nhật checklist.',
+      )
+      return false
+    } finally {
+      setChecklistLoading(null)
+    }
+  }
+
+  const addChecklistItem = async ({ content }) => {
+    const succeeded = await runChecklistAction(
+      'create',
+      () => createTaskChecklistItemApi(taskId, { content }),
+    )
+    if (succeeded) checklistForm.resetFields()
+  }
+
+  const toggleChecklistItem = (item, isCompleted) => runChecklistAction(
+    item.id,
+    () => toggleTaskChecklistItemApi(taskId, item.id, {
+      is_completed: isCompleted,
+    }),
+  )
+
+  const deleteChecklistItem = (itemId) => runChecklistAction(
+    itemId,
+    () => deleteTaskChecklistItemApi(taskId, itemId),
+  )
+
+  const beginChecklistEdit = (item) => {
+    setEditingChecklistItem(item.id)
+    setChecklistEditValue(item.content)
+  }
+
+  const cancelChecklistEdit = () => {
+    setEditingChecklistItem(null)
+    setChecklistEditValue('')
+  }
+
+  const saveChecklistEdit = async (itemId) => {
+    const content = checklistEditValue.trim()
+    if (!content) {
+      setError('Nội dung bước công việc là bắt buộc.')
+      return
+    }
+
+    const succeeded = await runChecklistAction(
+      itemId,
+      () => updateTaskChecklistItemApi(taskId, itemId, { content }),
+    )
+    if (succeeded) cancelChecklistEdit()
   }
 
   const uploadAttachment = async (file, submissionId = null) => {
@@ -582,6 +707,199 @@ export default function UserTaskDetailPage() {
               activeKey={activeWorkspaceTab}
               onChange={changeWorkspaceTab}
               items={[
+                {
+                  key: 'checklist',
+                  label: (
+                    <span className={styles.tabLabel}>
+                      <FiList />
+                      Checklist ({checklistProgress.completed}/{checklistProgress.total})
+                    </span>
+                  ),
+                  children: (
+                    <div className={styles.checklistPanel}>
+                      <div className={styles.checklistHeader}>
+                        <div>
+                          <strong>Tiến độ công việc</strong>
+                          <span>
+                            {checklistProgress.total
+                              ? `${checklistProgress.completed} trên ${checklistProgress.total} bước đã hoàn thành`
+                              : 'Chưa có bước công việc nào'}
+                          </span>
+                        </div>
+                        <strong className={styles.progressValue}>
+                          {checklistProgress.percentage}%
+                        </strong>
+                      </div>
+                      <Progress
+                        percent={checklistProgress.percentage}
+                        showInfo={false}
+                        strokeColor="#206a37"
+                        trailColor="#e6ece8"
+                      />
+
+                      {checklistPermissions.can_manage && (
+                        <Form
+                          form={checklistForm}
+                          className={styles.checklistForm}
+                          onFinish={addChecklistItem}
+                        >
+                          <Form.Item
+                            name="content"
+                            rules={[
+                              {
+                                required: true,
+                                whitespace: true,
+                                message: 'Nhập nội dung bước công việc',
+                              },
+                              {
+                                max: 255,
+                                message: 'Tối đa 255 ký tự',
+                              },
+                            ]}
+                          >
+                            <Input
+                              maxLength={255}
+                              placeholder="Thêm một giai đoạn cần thực hiện..."
+                              onPressEnter={(event) => {
+                                if (!event.nativeEvent.isComposing) {
+                                  event.preventDefault()
+                                  checklistForm.submit()
+                                }
+                              }}
+                            />
+                          </Form.Item>
+                          <Button
+                            type="primary"
+                            htmlType="submit"
+                            icon={<FiPlus />}
+                            loading={checklistLoading === 'create'}
+                          >
+                            Thêm bước
+                          </Button>
+                        </Form>
+                      )}
+
+                      {checklistItems.length === 0 ? (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={
+                            checklistPermissions.can_manage
+                              ? 'Thêm các giai đoạn để người thực hiện cập nhật tiến độ'
+                              : 'Người giao chưa tạo checklist cho task này'
+                          }
+                        />
+                      ) : (
+                        <div className={styles.checklistItems}>
+                          {checklistItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className={`${styles.checklistItem} ${
+                                item.is_completed ? styles.checklistCompleted : ''
+                              }`}
+                            >
+                              <Checkbox
+                                checked={item.is_completed}
+                                disabled={
+                                  !checklistPermissions.can_toggle
+                                  || checklistLoading === item.id
+                                }
+                                onChange={(event) => toggleChecklistItem(
+                                  item,
+                                  event.target.checked,
+                                )}
+                              />
+                              {editingChecklistItem === item.id ? (
+                                <div className={styles.checklistEdit}>
+                                  <Input
+                                    value={checklistEditValue}
+                                    maxLength={255}
+                                    autoFocus
+                                    onChange={(event) => setChecklistEditValue(event.target.value)}
+                                    onPressEnter={(event) => {
+                                      if (!event.nativeEvent.isComposing) {
+                                        event.preventDefault()
+                                        saveChecklistEdit(item.id)
+                                      }
+                                    }}
+                                  />
+                                  <Tooltip title="Lưu thay đổi">
+                                    <Button
+                                      type="text"
+                                      icon={<FiCheck />}
+                                      loading={checklistLoading === item.id}
+                                      onClick={() => saveChecklistEdit(item.id)}
+                                      aria-label="Lưu bước công việc"
+                                    />
+                                  </Tooltip>
+                                  <Tooltip title="Hủy chỉnh sửa">
+                                    <Button
+                                      type="text"
+                                      icon={<FiX />}
+                                      disabled={checklistLoading === item.id}
+                                      onClick={cancelChecklistEdit}
+                                      aria-label="Hủy chỉnh sửa bước công việc"
+                                    />
+                                  </Tooltip>
+                                </div>
+                              ) : (
+                                <div className={styles.checklistContent}>
+                                  <strong>{item.content}</strong>
+                                  <span>
+                                    {item.is_completed
+                                      ? `${item.completed_by_name || 'Người thực hiện'} hoàn thành · ${formatDateTime(item.completed_at)}`
+                                      : `Bước ${item.position} · Chưa hoàn thành`}
+                                  </span>
+                                </div>
+                              )}
+                              {checklistPermissions.can_manage
+                                && editingChecklistItem !== item.id && (
+                                <div className={styles.checklistActions}>
+                                  <Tooltip title="Sửa bước">
+                                    <Button
+                                      type="text"
+                                      icon={<FiEdit2 />}
+                                      disabled={checklistLoading !== null}
+                                      onClick={() => beginChecklistEdit(item)}
+                                      aria-label="Sửa bước công việc"
+                                    />
+                                  </Tooltip>
+                                  <Popconfirm
+                                    title="Xóa bước công việc?"
+                                    description="Tiến độ đã đánh dấu của bước này cũng sẽ bị xóa."
+                                    okText="Xóa"
+                                    cancelText="Giữ lại"
+                                    okButtonProps={{ danger: true }}
+                                    onConfirm={() => deleteChecklistItem(item.id)}
+                                  >
+                                    <Tooltip title="Xóa bước">
+                                      <Button
+                                        type="text"
+                                        danger
+                                        icon={<FiTrash2 />}
+                                        loading={checklistLoading === item.id}
+                                        aria-label="Xóa bước công việc"
+                                      />
+                                    </Tooltip>
+                                  </Popconfirm>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {!checklistPermissions.can_toggle
+                        && isAssignee
+                        && task.status !== 'IN_PROGRESS'
+                        && checklistItems.length > 0 && (
+                          <p className={styles.checklistHint}>
+                            Bắt đầu task để đánh dấu tiến độ. Khi đã gửi kết quả,
+                            checklist sẽ chuyển sang chỉ đọc.
+                          </p>
+                      )}
+                    </div>
+                  ),
+                },
                 {
                   key: 'submissions',
                   label: `Kết quả (${submissions.length})`,
