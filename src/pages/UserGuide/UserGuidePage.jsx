@@ -82,7 +82,7 @@ const guides = [
       ['Tìm công việc', 'Mở Việc được giao và dùng bộ lọc Task chính, Subtask, trạng thái hoặc ưu tiên.'],
       ['Đọc đầy đủ yêu cầu', 'Kiểm tra mô tả, người giao, deadline, tài liệu và lịch sử trước khi bắt đầu.'],
       ['Nhận thực hiện', 'Bấm Bắt đầu để chuyển công việc từ Chờ tiếp nhận sang Đang thực hiện.'],
-      ['Cập nhật checklist', 'Mở tab Checklist và đánh dấu từng giai đoạn đã hoàn thành để người giao theo dõi tiến độ.'],
+      ['Cập nhật checklist', 'Mở tab Checklist, tự thêm hạng mục khi cần và đánh dấu từng phần đã hoàn thành để người giao theo dõi tiến độ.'],
       ['Trao đổi nếu chưa rõ', 'Dùng tab Trao đổi để hỏi lại yêu cầu hoặc đề nghị điều chỉnh deadline.'],
       ['Gửi kết quả', 'Bấm Gửi kết quả, mô tả nội dung đã hoàn thành và chọn file cần đính kèm.'],
     ],
@@ -99,7 +99,7 @@ const guides = [
     steps: [
       ['Mở task chính', 'Chọn task chính đang mở mà bạn là người thực hiện.'],
       ['Tạo công việc con', 'Bấm Tạo subtask và nhập tiêu đề, mô tả, người thực hiện, ưu tiên, deadline.'],
-      ['Lập checklist', 'Người giao thêm các giai đoạn tại tab Checklist; người thực hiện đánh dấu sau khi bắt đầu công việc.'],
+      ['Lập checklist', 'Người giao và người thực hiện cùng thêm các hạng mục tại tab Checklist; người thực hiện đánh dấu sau khi bắt đầu công việc.'],
       ['Theo dõi tiến độ', 'Xem danh sách tại tab Công việc con hoặc trong phần subtask đã giao.'],
       ['Xử lý kết quả', 'Subtask có quy trình bắt đầu, gửi kết quả, duyệt và yêu cầu làm lại như task chính.'],
     ],

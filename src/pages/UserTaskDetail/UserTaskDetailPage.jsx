@@ -133,6 +133,7 @@ export default function UserTaskDetailPage() {
     percentage: 0,
   })
   const [checklistPermissions, setChecklistPermissions] = useState({
+    can_add: false,
     can_manage: false,
     can_toggle: false,
   })
@@ -197,6 +198,7 @@ export default function UserTaskDetailPage() {
         percentage: 0,
       })
       setChecklistPermissions(checklistRes.data.permissions || {
+        can_add: false,
         can_manage: false,
         can_toggle: false,
       })
@@ -233,6 +235,7 @@ export default function UserTaskDetailPage() {
         percentage: 0,
       })
       setChecklistPermissions(response.data.permissions || {
+        can_add: false,
         can_manage: false,
         can_toggle: false,
       })
@@ -471,7 +474,7 @@ export default function UserTaskDetailPage() {
   const saveChecklistEdit = async (itemId) => {
     const content = checklistEditValue.trim()
     if (!content) {
-      setError('Nội dung bước công việc là bắt buộc.')
+      setError('Nội dung hạng mục là bắt buộc.')
       return
     }
 
@@ -722,8 +725,8 @@ export default function UserTaskDetailPage() {
                           <strong>Tiến độ công việc</strong>
                           <span>
                             {checklistProgress.total
-                              ? `${checklistProgress.completed} trên ${checklistProgress.total} bước đã hoàn thành`
-                              : 'Chưa có bước công việc nào'}
+                              ? `${checklistProgress.completed} trên ${checklistProgress.total} hạng mục đã hoàn thành`
+                              : 'Chưa có hạng mục nào'}
                           </span>
                         </div>
                         <strong className={styles.progressValue}>
@@ -737,7 +740,7 @@ export default function UserTaskDetailPage() {
                         trailColor="#e6ece8"
                       />
 
-                      {checklistPermissions.can_manage && (
+                      {checklistPermissions.can_add && (
                         <Form
                           form={checklistForm}
                           className={styles.checklistForm}
@@ -749,7 +752,7 @@ export default function UserTaskDetailPage() {
                               {
                                 required: true,
                                 whitespace: true,
-                                message: 'Nhập nội dung bước công việc',
+                                message: 'Nhập nội dung hạng mục',
                               },
                               {
                                 max: 255,
@@ -759,7 +762,7 @@ export default function UserTaskDetailPage() {
                           >
                             <Input
                               maxLength={255}
-                              placeholder="Thêm một giai đoạn cần thực hiện..."
+                              placeholder="Ví dụ: Ảnh banner 1"
                               onPressEnter={(event) => {
                                 if (!event.nativeEvent.isComposing) {
                                   event.preventDefault()
@@ -774,7 +777,7 @@ export default function UserTaskDetailPage() {
                             icon={<FiPlus />}
                             loading={checklistLoading === 'create'}
                           >
-                            Thêm bước
+                            Thêm mục
                           </Button>
                         </Form>
                       )}
@@ -783,9 +786,9 @@ export default function UserTaskDetailPage() {
                         <Empty
                           image={Empty.PRESENTED_IMAGE_SIMPLE}
                           description={
-                            checklistPermissions.can_manage
-                              ? 'Thêm các giai đoạn để người thực hiện cập nhật tiến độ'
-                              : 'Người giao chưa tạo checklist cho task này'
+                            checklistPermissions.can_add
+                              ? 'Thêm các hạng mục cần hoàn thành'
+                              : 'Task này chưa có hạng mục checklist'
                           }
                         />
                       ) : (
@@ -828,7 +831,7 @@ export default function UserTaskDetailPage() {
                                       icon={<FiCheck />}
                                       loading={checklistLoading === item.id}
                                       onClick={() => saveChecklistEdit(item.id)}
-                                      aria-label="Lưu bước công việc"
+                                      aria-label="Lưu hạng mục"
                                     />
                                   </Tooltip>
                                   <Tooltip title="Hủy chỉnh sửa">
@@ -837,7 +840,7 @@ export default function UserTaskDetailPage() {
                                       icon={<FiX />}
                                       disabled={checklistLoading === item.id}
                                       onClick={cancelChecklistEdit}
-                                      aria-label="Hủy chỉnh sửa bước công việc"
+                                      aria-label="Hủy chỉnh sửa hạng mục"
                                     />
                                   </Tooltip>
                                 </div>
@@ -847,37 +850,37 @@ export default function UserTaskDetailPage() {
                                   <span>
                                     {item.is_completed
                                       ? `${item.completed_by_name || 'Người thực hiện'} hoàn thành · ${formatDateTime(item.completed_at)}`
-                                      : `Bước ${item.position} · Chưa hoàn thành`}
+                                      : 'Chưa hoàn thành'}
                                   </span>
                                 </div>
                               )}
-                              {checklistPermissions.can_manage
+                              {item.can_manage
                                 && editingChecklistItem !== item.id && (
                                 <div className={styles.checklistActions}>
-                                  <Tooltip title="Sửa bước">
+                                  <Tooltip title="Sửa hạng mục">
                                     <Button
                                       type="text"
                                       icon={<FiEdit2 />}
                                       disabled={checklistLoading !== null}
                                       onClick={() => beginChecklistEdit(item)}
-                                      aria-label="Sửa bước công việc"
+                                      aria-label="Sửa hạng mục"
                                     />
                                   </Tooltip>
                                   <Popconfirm
-                                    title="Xóa bước công việc?"
-                                    description="Tiến độ đã đánh dấu của bước này cũng sẽ bị xóa."
+                                    title="Xóa hạng mục?"
+                                    description="Trạng thái hoàn thành của hạng mục này cũng sẽ bị xóa."
                                     okText="Xóa"
                                     cancelText="Giữ lại"
                                     okButtonProps={{ danger: true }}
                                     onConfirm={() => deleteChecklistItem(item.id)}
                                   >
-                                    <Tooltip title="Xóa bước">
+                                    <Tooltip title="Xóa hạng mục">
                                       <Button
                                         type="text"
                                         danger
                                         icon={<FiTrash2 />}
                                         loading={checklistLoading === item.id}
-                                        aria-label="Xóa bước công việc"
+                                        aria-label="Xóa hạng mục"
                                       />
                                     </Tooltip>
                                   </Popconfirm>
