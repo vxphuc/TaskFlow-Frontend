@@ -1,4 +1,4 @@
-import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space, message } from 'antd'
+import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space, Switch, message } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
@@ -9,7 +9,12 @@ import {
   FiUser,
 } from 'react-icons/fi'
 import { useNavigate } from 'react-router'
-import { createTaskApi, getMyCreatedTasksApi, uploadTaskAttachmentApi } from '../../api/taskApi'
+import {
+  createTaskApi,
+  getMyCreatedTasksApi,
+  getTaskReviewerCandidatesApi,
+  uploadTaskAttachmentApi,
+} from '../../api/taskApi'
 import { getUsersApi } from '../../api/userApi'
 import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
@@ -22,12 +27,14 @@ export default function UserCreatedTasksPage() {
   const [tasks, setTasks] = useState(null)
   const [createdSubtasks, setCreatedSubtasks] = useState([])
   const [assignees, setAssignees] = useState([])
+  const [reviewers, setReviewers] = useState([])
   const [status, setStatus] = useState()
   const [priority, setPriority] = useState()
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [creationFiles, setCreationFiles] = useState([])
   const [error, setError] = useState('')
+  const selectedAssignee = Form.useWatch('assigned_to', form)
 
   const loadData = useCallback(async () => {
     setError('')
@@ -47,6 +54,17 @@ export default function UserCreatedTasksPage() {
   useEffect(() => {
     Promise.resolve().then(loadData)
   }, [loadData])
+
+  useEffect(() => {
+    if (!modalOpen || !selectedAssignee) {
+      Promise.resolve().then(() => setReviewers([]))
+      return
+    }
+
+    getTaskReviewerCandidatesApi(selectedAssignee)
+      .then((response) => setReviewers(response.data.reviewers || []))
+      .catch(() => setReviewers([]))
+  }, [modalOpen, selectedAssignee])
 
   useRealtimeRefresh(loadData, 'task')
 
@@ -95,6 +113,7 @@ export default function UserCreatedTasksPage() {
     if (submitting) return
     setModalOpen(false)
     setCreationFiles([])
+    setReviewers([])
     form.resetFields()
   }
 
@@ -157,6 +176,7 @@ export default function UserCreatedTasksPage() {
                 <span className={styles.description}>{task.description || 'Không có mô tả công việc.'}</span>
                 <span className={styles.people}>
                   <span><FiUser /> Người thực hiện: <b>{task.assigned_to_name || 'Chưa xác định'}</b></span>
+                  <span>Người duyệt: <b>{task.reviewer_name || 'Bạn'}</b></span>
                 </span>
                 <span className={styles.cardBottom}>
                   <small>Hạn {formatDateTime(task.due_date)}</small><FiArrowRight />
@@ -251,7 +271,15 @@ export default function UserCreatedTasksPage() {
         footer={null}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" onFinish={createTask} initialValues={{ priority: 'MEDIUM' }}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={createTask}
+          initialValues={{
+            priority: 'MEDIUM',
+            require_subtasks_completed: false,
+          }}
+        >
           <Form.Item name="title" label="Tiêu đề" rules={[{ required: true, message: 'Nhập tiêu đề công việc' }, { max: 200 }]}>
             <Input placeholder="Ví dụ: Hoàn thiện báo cáo tháng" />
           </Form.Item>
@@ -263,8 +291,33 @@ export default function UserCreatedTasksPage() {
               showSearch
               optionFilterProp="label"
               placeholder={assignees.length ? 'Chọn nhân sự cấp dưới' : 'Không có nhân sự phù hợp'}
+              onChange={() => form.setFieldValue('reviewer_id', undefined)}
               options={assignees.map((user) => ({ value: user.id, label: `${user.full_name} · ${user.phone}` }))}
             />
+          </Form.Item>
+          <Form.Item name="reviewer_id" label="Người duyệt">
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder={
+                selectedAssignee
+                  ? 'Mặc định: bạn duyệt'
+                  : 'Chọn người thực hiện trước'
+              }
+              disabled={!selectedAssignee}
+              options={reviewers.map((reviewer) => ({
+                value: reviewer.id,
+                label: `${reviewer.full_name} · ${reviewer.phone}`,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="require_subtasks_completed"
+            label="Phải hoàn thành subtask trước khi gửi kết quả task chính"
+            valuePropName="checked"
+          >
+            <Switch />
           </Form.Item>
           <div className={styles.formGrid}>
             <Form.Item name="priority" label="Ưu tiên">

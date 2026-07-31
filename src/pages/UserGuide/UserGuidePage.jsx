@@ -98,7 +98,8 @@ const guides = [
     action: 'Mở danh sách công việc',
     steps: [
       ['Mở task chính', 'Chọn task chính đang mở mà bạn là người thực hiện.'],
-      ['Tạo công việc con', 'Bấm Tạo subtask và nhập tiêu đề, mô tả, người thực hiện, ưu tiên, deadline.'],
+      ['Tạo công việc con', 'Người giao hoặc người thực hiện task chính bấm Tạo subtask, sau đó chọn người thực hiện, người duyệt, ưu tiên và deadline.'],
+      ['Quy tắc hoàn thành', 'Trong tab Công việc con, người giao có thể yêu cầu hoàn tất mọi subtask trước khi task chính được gửi kết quả.'],
       ['Lập checklist', 'Người giao và người thực hiện cùng thêm các hạng mục tại tab Checklist; người thực hiện đánh dấu sau khi bắt đầu công việc.'],
       ['Theo dõi tiến độ', 'Xem danh sách tại tab Công việc con hoặc trong phần subtask đã giao.'],
       ['Xử lý kết quả', 'Subtask có quy trình bắt đầu, gửi kết quả, duyệt và yêu cầu làm lại như task chính.'],

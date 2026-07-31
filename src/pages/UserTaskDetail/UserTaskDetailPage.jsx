@@ -12,6 +12,7 @@ import {
   Progress,
   Select,
   Skeleton,
+  Switch,
   Tabs,
   Timeline,
   Tooltip,
@@ -59,6 +60,7 @@ import {
   getTaskSubmissionsApi,
   getTaskSubtasksApi,
   getSubtaskAssigneesApi,
+  getTaskReviewerCandidatesApi,
   rejectSubmissionApi,
   startSubmissionReviewApi,
   startTaskApi,
@@ -66,6 +68,7 @@ import {
   toggleTaskChecklistItemApi,
   updateTaskChecklistItemApi,
   updateTaskDeadlineApi,
+  updateTaskSubtaskPolicyApi,
   uploadSubmissionAttachmentApi,
   uploadTaskAttachmentApi,
   withdrawSubmissionApi,
@@ -141,11 +144,13 @@ export default function UserTaskDetailPage() {
   const [history, setHistory] = useState([])
   const [attachments, setAttachments] = useState([])
   const [assignees, setAssignees] = useState([])
+  const [subtaskReviewers, setSubtaskReviewers] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [checklistLoading, setChecklistLoading] = useState(null)
+  const [subtaskPolicyLoading, setSubtaskPolicyLoading] = useState(false)
   const [editingChecklistItem, setEditingChecklistItem] = useState(null)
   const [checklistEditValue, setChecklistEditValue] = useState('')
   const [actionModal, setActionModal] = useState(null)
@@ -274,7 +279,11 @@ export default function UserTaskDetailPage() {
   }, [comments])
 
   useEffect(() => {
-    if (!task || task.assigned_to !== user.id || task.parent_task_id) return
+    if (
+      !task
+      || task.parent_task_id
+      || ![task.assigned_to, task.created_by].includes(user.id)
+    ) return
 
     Promise.resolve()
       .then(() => getSubtaskAssigneesApi(taskId))
@@ -379,6 +388,7 @@ export default function UserTaskDetailPage() {
           title: values.title,
           description: values.description,
           assigned_to: values.assigned_to,
+          reviewer_id: values.reviewer_id,
           priority: values.priority,
           due_date: values.due_date?.toISOString(),
         })
@@ -406,6 +416,7 @@ export default function UserTaskDetailPage() {
         }
 
         setSubtaskCreationFiles([])
+        setSubtaskReviewers([])
       })
     }
   }
@@ -415,7 +426,42 @@ export default function UserTaskDetailPage() {
     setActionModal(null)
     setSubmissionFiles([])
     setSubtaskCreationFiles([])
+    setSubtaskReviewers([])
     actionForm.resetFields()
+  }
+
+  const loadSubtaskReviewers = async (assigneeId) => {
+    actionForm.setFieldValue('reviewer_id', undefined)
+    if (!assigneeId) {
+      setSubtaskReviewers([])
+      return
+    }
+
+    try {
+      const response = await getTaskReviewerCandidatesApi(assigneeId)
+      setSubtaskReviewers(response.data.reviewers || [])
+    } catch {
+      setSubtaskReviewers([])
+    }
+  }
+
+  const changeSubtaskPolicy = async (checked) => {
+    setSubtaskPolicyLoading(true)
+    setError('')
+    try {
+      const response = await updateTaskSubtaskPolicyApi(taskId, {
+        require_subtasks_completed: checked,
+      })
+      setTask(response.data.task)
+      message.success('Đã cập nhật quy tắc subtask.')
+    } catch (err) {
+      setError(
+        err.response?.data?.message
+        || 'Không thể cập nhật quy tắc subtask.',
+      )
+    } finally {
+      setSubtaskPolicyLoading(false)
+    }
   }
 
   const sendComment = async ({ content }) => {
@@ -603,7 +649,11 @@ export default function UserTaskDetailPage() {
     if (isAssignee && task.status === 'IN_PROGRESS') {
       items.push({ key: 'submit', label: 'Gửi kết quả', icon: <FiSend />, primary: true, modal: 'submit' })
     }
-    if (isAssignee && !task.parent_task_id && isTaskOpen(task.status)) {
+    if (
+      (isAssignee || isCreator)
+      && !task.parent_task_id
+      && isTaskOpen(task.status)
+    ) {
       items.push({ key: 'subtask', label: 'Tạo subtask', icon: <FiPlus />, modal: 'subtask' })
     }
     if (isAssignee && task.status === 'SUBMITTED' && latestSubmission && !latestSubmission.is_withdrawn) {
@@ -699,6 +749,11 @@ export default function UserTaskDetailPage() {
                     ? task.assigned_to_name || 'Chưa xác định'
                     : task.created_by_name || 'Chưa xác định'}
               </strong>
+              {!task.is_personal && (
+                <small>
+                  Người duyệt: {task.reviewer_name || 'Người giao'}
+                </small>
+              )}
             </div>
             <div><span>Ngày giao</span><strong>{formatDateTime(task.assigned_at)}</strong></div>
             <div><span>Deadline hiện tại</span><strong>{formatDateTime(task.due_date)}</strong></div>
@@ -998,23 +1053,56 @@ export default function UserTaskDetailPage() {
                 {
                   key: 'subtasks',
                   label: `Công việc con (${subtasks.length})`,
-                  children: subtasks.length === 0 ? <Empty description="Chưa có công việc con" /> : (
-                    <div className={styles.subtaskList}>
-                      {subtasks.map((subtask) => (
-                        <button type="button" key={subtask.id} onClick={() => navigate(`/app/tasks/${subtask.id}`)}>
-                          <span>
-                            <strong>{subtask.title}</strong>
-                            {subtask.created_by === user.id ? (
-                              <small><FiUser /> Người thực hiện: {subtask.assigned_to_name || 'Chưa xác định'}</small>
-                            ) : (
-                              <small><FiSend /> Người giao: {subtask.created_by_name || 'Chưa xác định'}</small>
-                            )}
-                            <small>Hạn {formatDateTime(subtask.due_date)}</small>
-                          </span>
-                          <span className={`${styles.status} ${styles[subtask.status.toLowerCase()]}`}>{getStatusLabel(subtask.status)}</span>
-                          <FiArrowLeft className={styles.openIcon} />
-                        </button>
-                      ))}
+                  children: (
+                    <div className={styles.subtaskWorkspace}>
+                      {!task.parent_task_id && (
+                        <div className={styles.subtaskPolicy}>
+                          <div>
+                            <strong>Hoàn tất subtask trước task chính</strong>
+                            <span>
+                              {task.require_subtasks_completed
+                                ? 'Task chính chỉ được gửi kết quả khi mọi subtask đã hoàn thành hoặc được hủy.'
+                                : 'Task chính có thể gửi kết quả mà không cần chờ subtask.'}
+                            </span>
+                          </div>
+                          {isCreator ? (
+                            <Switch
+                              checked={task.require_subtasks_completed}
+                              loading={subtaskPolicyLoading}
+                              disabled={!isTaskOpen(task.status)}
+                              onChange={changeSubtaskPolicy}
+                            />
+                          ) : (
+                            <strong>
+                              {task.require_subtasks_completed
+                                ? 'Bắt buộc'
+                                : 'Không bắt buộc'}
+                            </strong>
+                          )}
+                        </div>
+                      )}
+                      {subtasks.length === 0 ? (
+                        <Empty description="Chưa có công việc con" />
+                      ) : (
+                        <div className={styles.subtaskList}>
+                          {subtasks.map((subtask) => (
+                            <button type="button" key={subtask.id} onClick={() => navigate(`/app/tasks/${subtask.id}`)}>
+                              <span>
+                                <strong>{subtask.title}</strong>
+                                {subtask.created_by === user.id ? (
+                                  <small><FiUser /> Người thực hiện: {subtask.assigned_to_name || 'Chưa xác định'}</small>
+                                ) : (
+                                  <small><FiSend /> Người giao: {subtask.created_by_name || 'Chưa xác định'}</small>
+                                )}
+                                <small>Người duyệt: {subtask.reviewer_name || 'Người giao'}</small>
+                                <small>Hạn {formatDateTime(subtask.due_date)}</small>
+                              </span>
+                              <span className={`${styles.status} ${styles[subtask.status.toLowerCase()]}`}>{getStatusLabel(subtask.status)}</span>
+                              <FiArrowLeft className={styles.openIcon} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ),
                 },
@@ -1099,6 +1187,7 @@ export default function UserTaskDetailPage() {
                   showSearch
                   optionFilterProp="label"
                   placeholder={assignees.length ? 'Chọn nhân sự' : 'Không có nhân sự phù hợp'}
+                  onChange={loadSubtaskReviewers}
                   options={assignees.map((item) => ({
                     value: item.id,
                     label: `${item.full_name} · ${item.phone}`,
@@ -1123,6 +1212,18 @@ export default function UserTaskDetailPage() {
                   files={subtaskCreationFiles}
                   onChange={setSubtaskCreationFiles}
                   disabled={actionLoading}
+                />
+              </Form.Item>
+              <Form.Item name="reviewer_id" label="Người duyệt">
+                <Select
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="Mặc định: người tạo subtask duyệt"
+                  options={subtaskReviewers.map((reviewer) => ({
+                    value: reviewer.id,
+                    label: `${reviewer.full_name} · ${reviewer.phone}`,
+                  }))}
                 />
               </Form.Item>
             </>

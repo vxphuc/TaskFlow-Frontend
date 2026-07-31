@@ -21,6 +21,11 @@ export const createPersonalTaskApi = (data) =>
 export const createTaskApi = (data) =>
   axiosClient.post('/api/tasks', data)
 
+export const getTaskReviewerCandidatesApi = (assignedTo) =>
+  axiosClient.get('/api/tasks/reviewer-candidates', {
+    params: { assigned_to: assignedTo },
+  })
+
 export const getTaskDetailApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}`)
 
@@ -35,6 +40,9 @@ export const createSubtaskApi = (taskId, data) =>
 
 export const getSubtaskAssigneesApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}/subtask-assignees`)
+
+export const updateTaskSubtaskPolicyApi = (taskId, data) =>
+  axiosClient.patch(`/api/tasks/${taskId}/subtask-policy`, data)
 
 export const submitTaskApi = (taskId, data) =>
   axiosClient.post(`/api/tasks/${taskId}/submissions`, data)
