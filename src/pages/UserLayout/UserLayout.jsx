@@ -17,7 +17,6 @@ import {
   FiBookOpen,
   FiChevronDown,
   FiClipboard,
-  FiCpu,
   FiGrid,
   FiInbox,
   FiKey,
@@ -42,6 +41,7 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { useRealtimeStatus } from '../../hooks/useRealtimeStatus'
 import { formatDateTime } from '../../utils/task'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
+import AIAssistantWidget from '../AIAssistant/AIAssistantWidget'
 import styles from './UserLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -67,7 +67,6 @@ const navigation = [
   { key: '/app/recurring', icon: <FiRepeat />, label: 'Task định kỳ' },
   { key: '/app/initiatives', icon: <FiZap />, label: 'Sáng kiến' },
   { key: '/app/reports', icon: <FiBarChart2 />, label: 'Báo cáo' },
-  { key: '/app/assistant', icon: <FiCpu />, label: 'Trợ lý AI' },
   { key: '/app/guide', icon: <FiBookOpen />, label: 'Hướng dẫn sử dụng' },
 ]
 
@@ -302,6 +301,7 @@ export default function UserLayout() {
         )}
       </Drawer>
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+      <AIAssistantWidget />
     </Layout>
   )
 }

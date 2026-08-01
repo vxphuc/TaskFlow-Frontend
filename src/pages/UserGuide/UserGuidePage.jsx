@@ -181,10 +181,10 @@ const guides = [
     title: 'Hỏi trợ lý TaskFlow AI',
     audience: 'Dành cho người dùng cần tra cứu công việc hoặc hướng dẫn nhanh',
     summary: 'Hỏi về task, deadline, kết quả chờ duyệt, báo cáo và quy trình sử dụng trong đúng phạm vi tài khoản.',
-    href: '/app/assistant',
+    href: '/app',
     action: 'Mở Trợ lý AI',
     steps: [
-      ['Mở Trợ lý AI', 'Chọn Trợ lý AI trong menu và tạo một cuộc hội thoại mới.'],
+      ['Mở Trợ lý AI', 'Bấm biểu tượng tin nhắn nổi ở góc dưới bên phải và tạo một cuộc hội thoại mới.'],
       ['Đặt câu hỏi cụ thể', 'Nêu rõ task, khoảng thời gian hoặc thao tác cần hướng dẫn để nhận câu trả lời sát hơn.'],
       ['Kiểm tra nguồn', 'Khi câu trả lời nhắc đến công việc, bấm nguồn task bên dưới để mở dữ liệu gốc.'],
       ['Tiếp tục cùng ngữ cảnh', 'Hỏi tiếp trong cùng cuộc hội thoại hoặc tạo hội thoại mới cho một chủ đề khác.'],
@@ -213,6 +213,14 @@ const guides = [
 export default function UserGuidePage() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  const openGuideDestination = (guide) => {
+    if (guide.id === 'ai-assistant') {
+      window.dispatchEvent(new Event('taskflow:open-ai'))
+      return
+    }
+    navigate(guide.href)
+  }
 
   useEffect(() => {
     if (!location.hash) return
@@ -291,7 +299,7 @@ export default function UserGuidePage() {
 
                 <footer>
                   <p><strong>Lưu ý:</strong> {guide.note}</p>
-                  <Button type="primary" onClick={() => navigate(guide.href)}>
+                  <Button type="primary" onClick={() => openGuideDestination(guide)}>
                     {guide.action}
                     <FiArrowRight />
                   </Button>
