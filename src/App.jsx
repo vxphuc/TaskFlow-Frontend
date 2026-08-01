@@ -71,6 +71,10 @@ const InitiativesPage = lazyWithRetry(
   () => import('./pages/Initiatives/InitiativesPage'),
   'initiatives',
 )
+const AIAssistantPage = lazyWithRetry(
+  () => import('./pages/AIAssistant/AIAssistantPage'),
+  'ai-assistant',
+)
 
 function App() {
   const { user, loading } = useAuth()
@@ -118,6 +122,7 @@ function App() {
               <Route path="/app/reports" element={<UserReportsPage />} />
               <Route path="/app/recurring" element={<UserRecurringPage />} />
               <Route path="/app/initiatives" element={<InitiativesPage />} />
+              <Route path="/app/assistant" element={<AIAssistantPage />} />
               <Route path="/app/guide" element={<UserGuidePage />} />
               <Route path="/app/tasks/:taskId" element={<UserTaskDetailPage />} />
             </Route>
