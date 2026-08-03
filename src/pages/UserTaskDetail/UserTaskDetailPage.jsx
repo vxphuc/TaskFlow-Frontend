@@ -144,6 +144,7 @@ export default function UserTaskDetailPage() {
   const [history, setHistory] = useState([])
   const [attachments, setAttachments] = useState([])
   const [assignees, setAssignees] = useState([])
+  const [assigneeDepartments, setAssigneeDepartments] = useState([])
   const [subtaskReviewers, setSubtaskReviewers] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -156,6 +157,28 @@ export default function UserTaskDetailPage() {
   const [actionModal, setActionModal] = useState(null)
   const [submissionFiles, setSubmissionFiles] = useState([])
   const [subtaskCreationFiles, setSubtaskCreationFiles] = useState([])
+  const selectedSubtaskDepartment = Form.useWatch(
+    'assignee_department_id',
+    actionForm,
+  )
+  const selectedSubtaskAssignee = Form.useWatch('assigned_to', actionForm)
+  const visibleSubtaskAssignees = useMemo(
+    () => assignees.filter(
+      (item) => (
+        !selectedSubtaskDepartment
+        || item.department_id === selectedSubtaskDepartment
+      ),
+    ),
+    [assignees, selectedSubtaskDepartment],
+  )
+  const selectedSubtaskAssigneeData = useMemo(
+    () => assignees.find((item) => item.id === selectedSubtaskAssignee),
+    [assignees, selectedSubtaskAssignee],
+  )
+  const isCrossDepartmentSubtask = Boolean(
+    selectedSubtaskAssigneeData
+    && selectedSubtaskAssigneeData.department_id !== user.department_id,
+  )
   const requestedWorkspaceTab = searchParams.get('tab')
   const activeWorkspaceTab = workspaceTabs.has(requestedWorkspaceTab)
     ? requestedWorkspaceTab
@@ -287,8 +310,14 @@ export default function UserTaskDetailPage() {
 
     Promise.resolve()
       .then(() => getSubtaskAssigneesApi(taskId))
-      .then((response) => setAssignees(response.data.users || []))
-      .catch(() => setAssignees([]))
+      .then((response) => {
+        setAssignees(response.data.users || [])
+        setAssigneeDepartments(response.data.departments || [])
+      })
+      .catch(() => {
+        setAssignees([])
+        setAssigneeDepartments([])
+      })
   }, [task, taskId, user.id])
 
   const isAssignee = task?.assigned_to === user.id
@@ -439,10 +468,36 @@ export default function UserTaskDetailPage() {
 
     try {
       const response = await getTaskReviewerCandidatesApi(assigneeId)
-      setSubtaskReviewers(response.data.reviewers || [])
+      const nextReviewers = response.data.reviewers || []
+      setSubtaskReviewers(nextReviewers)
+      const assignee = assignees.find((item) => item.id === assigneeId)
+      if (assignee?.department_id !== user.department_id) {
+        const directManager = nextReviewers.find(
+          (item) => item.id === assignee.manager_id,
+        )
+        if (directManager) {
+          actionForm.setFieldValue('reviewer_id', directManager.id)
+        }
+      }
     } catch {
       setSubtaskReviewers([])
     }
+  }
+
+  const openActionModal = (modalName) => {
+    if (modalName === 'subtask') {
+      const defaultDepartmentId = assigneeDepartments.some(
+        (department) => department.id === user.department_id,
+      )
+        ? user.department_id
+        : assigneeDepartments[0]?.id
+      actionForm.setFieldsValue({
+        assignee_department_id: defaultDepartmentId,
+        assigned_to: undefined,
+        reviewer_id: undefined,
+      })
+    }
+    setActionModal(modalName)
   }
 
   const changeSubtaskPolicy = async (checked) => {
@@ -725,7 +780,7 @@ export default function UserTaskDetailPage() {
                   danger={action.danger}
                   icon={action.icon}
                   loading={actionLoading}
-                  onClick={() => action.run ? action.run() : setActionModal(action.modal)}
+                  onClick={() => action.run ? action.run() : openActionModal(action.modal)}
                 >
                   {action.label}
                 </Button>
@@ -1182,15 +1237,37 @@ export default function UserTaskDetailPage() {
               <Form.Item name="description" label="Mô tả">
                 <Input.TextArea rows={3} placeholder="Yêu cầu và kết quả mong đợi" />
               </Form.Item>
+              <Form.Item
+                name="assignee_department_id"
+                label="Bộ phận thực hiện"
+                rules={[{ required: true, message: 'Chọn bộ phận thực hiện' }]}
+              >
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="Chọn bộ phận"
+                  onChange={() => {
+                    actionForm.setFieldValue('assigned_to', undefined)
+                    actionForm.setFieldValue('reviewer_id', undefined)
+                    setSubtaskReviewers([])
+                  }}
+                  options={assigneeDepartments.map((department) => ({
+                    value: department.id,
+                    label: department.id === user.department_id
+                      ? `${department.name} · Bộ phận của bạn`
+                      : department.name,
+                  }))}
+                />
+              </Form.Item>
               <Form.Item name="assigned_to" label="Người thực hiện" rules={[{ required: true, message: 'Chọn người thực hiện' }]}>
                 <Select
                   showSearch
                   optionFilterProp="label"
-                  placeholder={assignees.length ? 'Chọn nhân sự' : 'Không có nhân sự phù hợp'}
+                  placeholder={visibleSubtaskAssignees.length ? 'Chọn nhân sự thực hiện' : 'Bộ phận này không có nhân sự phù hợp'}
                   onChange={loadSubtaskReviewers}
-                  options={assignees.map((item) => ({
+                  options={visibleSubtaskAssignees.map((item) => ({
                     value: item.id,
-                    label: `${item.full_name} · ${item.phone}`,
+                    label: `${item.full_name} · ${item.position_name}`,
                   }))}
                 />
               </Form.Item>
@@ -1214,12 +1291,20 @@ export default function UserTaskDetailPage() {
                   disabled={actionLoading}
                 />
               </Form.Item>
-              <Form.Item name="reviewer_id" label="Người duyệt">
+              <Form.Item
+                name="reviewer_id"
+                label="Người duyệt"
+                rules={isCrossDepartmentSubtask
+                  ? [{ required: true, message: 'Chọn người duyệt thuộc bộ phận thực hiện' }]
+                  : []}
+              >
                 <Select
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  placeholder="Mặc định: người tạo subtask duyệt"
+                  placeholder={isCrossDepartmentSubtask
+                    ? 'Chọn quản lý thuộc bộ phận thực hiện'
+                    : 'Mặc định: người tạo subtask duyệt'}
                   options={subtaskReviewers.map((reviewer) => ({
                     value: reviewer.id,
                     label: `${reviewer.full_name} · ${reviewer.phone}`,
@@ -1235,7 +1320,10 @@ export default function UserTaskDetailPage() {
               danger={['reject', 'cancel'].includes(actionModal)}
               htmlType="submit"
               loading={actionLoading}
-              disabled={actionModal === 'subtask' && !assignees.length}
+              disabled={
+                actionModal === 'subtask'
+                && !visibleSubtaskAssignees.length
+              }
             >
               Xác nhận
             </Button>

@@ -58,14 +58,16 @@
 .historyTitle small { color: #7c8981; font-size: 10px; }
 .conversationList { display: grid; align-content: start; gap: 6px; padding-top: 10px; overflow-y: auto; }
 .emptyHistory { padding: 40px 12px; color: #87938b; text-align: center; }
-.conversationItem { width: 100%; min-height: 58px; display: grid; grid-template-columns: 18px minmax(0,1fr) 30px; align-items: center; gap: 9px; padding: 8px 7px 8px 11px; border: 1px solid #e0e7e2; border-radius: 6px; color: #405047; background: #fff; cursor: pointer; text-align: left; }
+.conversationItem { width: 100%; min-height: 58px; display: grid; grid-template-columns: minmax(0,1fr) 30px; align-items: center; gap: 4px; padding: 5px 6px; border: 1px solid #e0e7e2; border-radius: 6px; color: #405047; background: #fff; }
 .conversationItem:hover { border-color: #aac6b3; }
 .conversationItem.active { border-color: #86ad92; color: #184f2b; background: #e8f3eb; }
-.conversationItem > span:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+.conversationSelect { min-width: 0; min-height: 46px; display: grid; grid-template-columns: 18px minmax(0,1fr); align-items: center; gap: 9px; padding: 3px 5px; border: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; }
+.conversationSelect > span { min-width: 0; display: grid; gap: 4px; }
+.conversationSelect:disabled, .deleteConversation:disabled { opacity: .55; cursor: not-allowed; }
 .conversationItem strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .conversationItem small { color: #839087; font-size: 10px; }
-.deleteConversation { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 4px; color: #87938b; }
-.deleteConversation:hover { color: #b83232; background: #faeaea; }
+.deleteConversation { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 4px; color: #87938b; background: transparent; cursor: pointer; }
+.deleteConversation:hover:not(:disabled) { color: #b83232; background: #faeaea; }
 
 .content { min-height: 0; overflow-y: auto; background: #f8faf8; }
 .alert { margin: 10px 10px 0; }

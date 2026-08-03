@@ -21,6 +21,9 @@ export const createPersonalTaskApi = (data) =>
 export const createTaskApi = (data) =>
   axiosClient.post('/api/tasks', data)
 
+export const getTaskAssigneeCandidatesApi = (params) =>
+  axiosClient.get('/api/tasks/assignee-candidates', { params })
+
 export const getTaskReviewerCandidatesApi = (assignedTo) =>
   axiosClient.get('/api/tasks/reviewer-candidates', {
     params: { assigned_to: assignedTo },

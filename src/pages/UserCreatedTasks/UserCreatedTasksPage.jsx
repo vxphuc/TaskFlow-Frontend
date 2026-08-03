@@ -12,21 +12,24 @@ import { useNavigate } from 'react-router'
 import {
   createTaskApi,
   getMyCreatedTasksApi,
+  getTaskAssigneeCandidatesApi,
   getTaskReviewerCandidatesApi,
   uploadTaskAttachmentApi,
 } from '../../api/taskApi'
-import { getUsersApi } from '../../api/userApi'
 import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
+import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel, priorityOptions, taskStatuses } from '../../utils/task'
 import styles from './UserCreatedTasksPage.module.css'
 
 export default function UserCreatedTasksPage() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [tasks, setTasks] = useState(null)
   const [createdSubtasks, setCreatedSubtasks] = useState([])
   const [assignees, setAssignees] = useState([])
+  const [assigneeDepartments, setAssigneeDepartments] = useState([])
   const [reviewers, setReviewers] = useState([])
   const [status, setStatus] = useState()
   const [priority, setPriority] = useState()
@@ -35,17 +38,27 @@ export default function UserCreatedTasksPage() {
   const [creationFiles, setCreationFiles] = useState([])
   const [error, setError] = useState('')
   const selectedAssignee = Form.useWatch('assigned_to', form)
+  const selectedDepartment = Form.useWatch('assignee_department_id', form)
+  const selectedAssigneeData = useMemo(
+    () => assignees.find((item) => item.id === selectedAssignee),
+    [assignees, selectedAssignee],
+  )
+  const isCrossDepartment = Boolean(
+    selectedAssigneeData
+    && selectedAssigneeData.department_id !== user.department_id,
+  )
 
   const loadData = useCallback(async () => {
     setError('')
     try {
       const [tasksRes, usersRes] = await Promise.all([
         getMyCreatedTasksApi({ status, priority }),
-        getUsersApi({ is_active: true }),
+        getTaskAssigneeCandidatesApi(),
       ])
       setTasks(tasksRes.data.tasks || [])
       setCreatedSubtasks(tasksRes.data.created_subtasks || [])
       setAssignees(usersRes.data.users || [])
+      setAssigneeDepartments(usersRes.data.departments || [])
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải dữ liệu giao việc.')
     }
@@ -62,9 +75,21 @@ export default function UserCreatedTasksPage() {
     }
 
     getTaskReviewerCandidatesApi(selectedAssignee)
-      .then((response) => setReviewers(response.data.reviewers || []))
+      .then((response) => {
+        const nextReviewers = response.data.reviewers || []
+        setReviewers(nextReviewers)
+        const assignee = assignees.find((item) => item.id === selectedAssignee)
+        if (assignee?.department_id !== user.department_id) {
+          const directManager = nextReviewers.find(
+            (item) => item.id === assignee.manager_id,
+          )
+          if (directManager) {
+            form.setFieldValue('reviewer_id', directManager.id)
+          }
+        }
+      })
       .catch(() => setReviewers([]))
-  }, [modalOpen, selectedAssignee])
+  }, [assignees, form, modalOpen, selectedAssignee, user.department_id])
 
   useRealtimeRefresh(loadData, 'task')
 
@@ -73,11 +98,20 @@ export default function UserCreatedTasksPage() {
     [assignees],
   )
 
+  const visibleAssignees = useMemo(
+    () => assignees.filter(
+      (item) => !selectedDepartment || item.department_id === selectedDepartment,
+    ),
+    [assignees, selectedDepartment],
+  )
+
   const createTask = async (values) => {
     setSubmitting(true)
     try {
+      const taskValues = { ...values }
+      delete taskValues.assignee_department_id
       const response = await createTaskApi({
-        ...values,
+        ...taskValues,
         due_date: values.due_date?.toISOString(),
       })
       const task = response.data.task
@@ -117,13 +151,27 @@ export default function UserCreatedTasksPage() {
     form.resetFields()
   }
 
+  const openCreateModal = () => {
+    const defaultDepartmentId = assigneeDepartments.some(
+      (department) => department.id === user.department_id,
+    )
+      ? user.department_id
+      : assigneeDepartments[0]?.id
+    setModalOpen(true)
+    form.setFieldsValue({
+      assignee_department_id: defaultDepartmentId,
+      assigned_to: undefined,
+      reviewer_id: undefined,
+    })
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
           <span className={styles.eyebrow}>QUẢN LÝ GIAO VIỆC</span>
           <h1>Việc tôi giao</h1>
-          <p>Theo dõi công việc đã giao cho các cấp dưới trong phòng ban.</p>
+          <p>Theo dõi công việc đã giao cho nhân sự phù hợp trong và ngoài phòng ban.</p>
         </div>
         <Space wrap>
           <Button
@@ -132,7 +180,7 @@ export default function UserCreatedTasksPage() {
           >
             Hướng dẫn
           </Button>
-          <Button type="primary" icon={<FiPlus />} onClick={() => setModalOpen(true)}>
+          <Button type="primary" icon={<FiPlus />} onClick={openCreateModal}>
             Giao công việc
           </Button>
         </Space>
@@ -154,7 +202,7 @@ export default function UserCreatedTasksPage() {
       {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : tasks.length === 0 && createdSubtasks.length === 0 ? (
         <section className={styles.empty}>
           <Empty description="Bạn chưa giao công việc nào">
-            <Button type="primary" icon={<FiPlus />} onClick={() => setModalOpen(true)}>Tạo task đầu tiên</Button>
+            <Button type="primary" icon={<FiPlus />} onClick={openCreateModal}>Tạo task đầu tiên</Button>
           </Empty>
         </section>
       ) : (
@@ -278,6 +326,7 @@ export default function UserCreatedTasksPage() {
           initialValues={{
             priority: 'MEDIUM',
             require_subtasks_completed: false,
+            assignee_department_id: user.department_id,
           }}
         >
           <Form.Item name="title" label="Tiêu đề" rules={[{ required: true, message: 'Nhập tiêu đề công việc' }, { max: 200 }]}>
@@ -286,23 +335,56 @@ export default function UserCreatedTasksPage() {
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={4} placeholder="Mục tiêu, yêu cầu và kết quả mong đợi" />
           </Form.Item>
+          <Form.Item
+            name="assignee_department_id"
+            label="Bộ phận thực hiện"
+            rules={[{ required: true, message: 'Chọn bộ phận thực hiện' }]}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Chọn bộ phận"
+              onChange={() => {
+                form.setFieldValue('assigned_to', undefined)
+                form.setFieldValue('reviewer_id', undefined)
+                setReviewers([])
+              }}
+              options={assigneeDepartments.map((department) => ({
+                value: department.id,
+                label: department.id === user.department_id
+                  ? `${department.name} · Bộ phận của bạn`
+                  : department.name,
+              }))}
+            />
+          </Form.Item>
           <Form.Item name="assigned_to" label="Người thực hiện" rules={[{ required: true, message: 'Chọn người thực hiện' }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              placeholder={assignees.length ? 'Chọn nhân sự cấp dưới' : 'Không có nhân sự phù hợp'}
+              placeholder={visibleAssignees.length ? 'Chọn nhân sự thực hiện' : 'Bộ phận này không có nhân sự phù hợp'}
               onChange={() => form.setFieldValue('reviewer_id', undefined)}
-              options={assignees.map((user) => ({ value: user.id, label: `${user.full_name} · ${user.phone}` }))}
+              options={visibleAssignees.map((candidate) => ({
+                value: candidate.id,
+                label: `${candidate.full_name} · ${candidate.position_name}`,
+              }))}
             />
           </Form.Item>
-          <Form.Item name="reviewer_id" label="Người duyệt">
+          <Form.Item
+            name="reviewer_id"
+            label="Người duyệt"
+            rules={isCrossDepartment
+              ? [{ required: true, message: 'Chọn người duyệt thuộc bộ phận thực hiện' }]
+              : []}
+          >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
               placeholder={
                 selectedAssignee
-                  ? 'Mặc định: bạn duyệt'
+                  ? isCrossDepartment
+                    ? 'Chọn quản lý thuộc bộ phận thực hiện'
+                    : 'Mặc định: bạn duyệt'
                   : 'Chọn người thực hiện trước'
               }
               disabled={!selectedAssignee}
@@ -341,7 +423,14 @@ export default function UserCreatedTasksPage() {
           </Form.Item>
           <div className={styles.modalActions}>
             <Button onClick={closeCreateModal} disabled={submitting}>Hủy</Button>
-            <Button type="primary" htmlType="submit" loading={submitting} disabled={!assignees.length}>Giao task</Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              disabled={!visibleAssignees.length}
+            >
+              Giao task
+            </Button>
           </div>
         </Form>
       </Modal>

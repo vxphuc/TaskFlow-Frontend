@@ -200,7 +200,7 @@ export default function AIAssistantWidget() {
         used_today: current.used_today + 1,
         remaining_today: response.data.usage?.remaining_today ?? current.remaining_today,
       } : current)
-      await refreshConversations()
+      refreshConversations().catch(() => {})
     } catch (sendError) {
       setError(sendError.response?.data?.message || 'Trợ lý AI chưa thể trả lời. Vui lòng thử lại.')
       await loadConversation(conversationId)
@@ -253,7 +253,7 @@ export default function AIAssistantWidget() {
               <strong>TaskFlow AI</strong>
               <small>{status ? `Còn ${status.remaining_today}/${status.daily_limit} lượt hôm nay` : 'Trợ lý công việc'}</small>
             </div>
-            <button type="button" className={styles.headerIcon} onClick={createConversation} disabled={!status?.enabled} aria-label="Cuộc hội thoại mới">
+            <button type="button" className={styles.headerIcon} onClick={createConversation} disabled={!status?.enabled || sending} aria-label="Cuộc hội thoại mới">
               <FiPlus />
             </button>
             <button type="button" className={styles.headerIcon} onClick={() => setOpen(false)} aria-label="Đóng trợ lý AI">
@@ -265,30 +265,21 @@ export default function AIAssistantWidget() {
             <div className={styles.historyPanel}>
               <div className={styles.historyTitle}>
                 <div><strong>Lịch sử hội thoại</strong><small>Tối đa 50 cuộc trò chuyện gần đây</small></div>
-                <Button type="primary" size="small" icon={<FiPlus />} onClick={createConversation}>Tạo mới</Button>
+                <Button type="primary" size="small" icon={<FiPlus />} onClick={createConversation} disabled={!status?.enabled || sending}>Tạo mới</Button>
               </div>
               <div className={styles.conversationList}>
                 {conversations.length === 0 ? (
                   <span className={styles.emptyHistory}>Chưa có lịch sử hỏi đáp</span>
                 ) : conversations.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    className={`${styles.conversationItem} ${activeId === item.id ? styles.active : ''}`}
-                    onClick={() => selectConversation(item.id)}
-                  >
-                    <FiMessageSquare />
-                    <span><strong>{item.title}</strong><small>{formatDateTime(item.updated_at)}</small></span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className={styles.deleteConversation}
-                      onClick={(event) => removeConversation(event, item.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') removeConversation(event, item.id)
-                      }}
-                    ><FiTrash2 /></span>
-                  </button>
+                  <div key={item.id} className={`${styles.conversationItem} ${activeId === item.id ? styles.active : ''}`}>
+                    <button type="button" className={styles.conversationSelect} onClick={() => selectConversation(item.id)} disabled={sending}>
+                      <FiMessageSquare />
+                      <span><strong>{item.title}</strong><small>{formatDateTime(item.updated_at)}</small></span>
+                    </button>
+                    <button type="button" className={styles.deleteConversation} onClick={(event) => removeConversation(event, item.id)} disabled={sending} aria-label={`Xóa hội thoại ${item.title}`}>
+                      <FiTrash2 />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
