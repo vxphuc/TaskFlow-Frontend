@@ -32,7 +32,7 @@ const guides = [
       ['Mở màn hình giao việc', 'Chọn Việc tôi giao, sau đó bấm Giao công việc.'],
       ['Nhập yêu cầu', 'Điền tiêu đề, mô tả kết quả mong đợi, mức ưu tiên và deadline.'],
       ['Chọn người nhận', 'Chọn bộ phận trước, sau đó chọn nhân sự cấp dưới phù hợp trong hoặc ngoài phòng ban.'],
-      ['Chọn người duyệt', 'Với việc liên phòng ban, chọn quản lý phù hợp thuộc bộ phận của người thực hiện.'],
+      ['Chọn người duyệt', 'Với việc liên phòng ban, chọn quản lý thuộc bộ phận thực hiện hoặc chọn Bản thân để trực tiếp duyệt.'],
       ['Theo dõi task', 'Sau khi tạo, mở chi tiết để trao đổi, tải tài liệu, xem kết quả và các subtask.'],
       ['Điều chỉnh khi cần', 'Khi task còn mở, người giao có thể đổi deadline hoặc hủy task và ghi rõ lý do.'],
     ],

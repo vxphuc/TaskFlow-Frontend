@@ -1307,7 +1307,9 @@ export default function UserTaskDetailPage() {
                     : 'Mặc định: người tạo subtask duyệt'}
                   options={subtaskReviewers.map((reviewer) => ({
                     value: reviewer.id,
-                    label: `${reviewer.full_name} · ${reviewer.phone}`,
+                    label: reviewer.id === user.id
+                      ? `${reviewer.full_name} · Bản thân`
+                      : `${reviewer.full_name} · ${reviewer.phone}`,
                   }))}
                 />
               </Form.Item>
