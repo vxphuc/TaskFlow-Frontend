@@ -34,6 +34,7 @@ const guides = [
       ['Chọn người nhận', 'Chọn bộ phận trước, sau đó chọn nhân sự cấp dưới phù hợp trong hoặc ngoài phòng ban.'],
       ['Chọn người duyệt', 'Với việc liên phòng ban, chọn quản lý thuộc bộ phận thực hiện hoặc chọn Bản thân để trực tiếp duyệt.'],
       ['Theo dõi task', 'Sau khi tạo, mở chi tiết để trao đổi, tải tài liệu, xem kết quả và các subtask.'],
+      ['Xem tiến độ tổng quan', 'Mở tab Tiến độ tổng quan để xem cây Task chính, các Subtask và tỷ lệ checklist hoàn thành theo thời gian thực.'],
       ['Điều chỉnh khi cần', 'Khi task đang chờ, đang làm hoặc cần làm lại, người giao có thể sửa tiêu đề, mô tả, ưu tiên và deadline.'],
       ['Kết thúc yêu cầu', 'Người giao có thể hủy task còn mở và ghi rõ lý do khi công việc không còn cần thiết.'],
     ],

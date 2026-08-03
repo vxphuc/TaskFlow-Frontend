@@ -41,6 +41,9 @@ export const startTaskApi = (taskId) =>
 export const getTaskSubtasksApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}/subtasks`)
 
+export const getTaskProgressTreeApi = (taskId) =>
+  axiosClient.get(`/api/tasks/${taskId}/progress-tree`)
+
 export const createSubtaskApi = (taskId, data) =>
   axiosClient.post(`/api/tasks/${taskId}/subtasks`, data)
 

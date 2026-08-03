@@ -29,6 +29,7 @@ import {
   FiDownload,
   FiEdit2,
   FiFile,
+  FiGitBranch,
   FiList,
   FiMessageSquare,
   FiPlus,
@@ -57,6 +58,7 @@ import {
   getTaskChecklistApi,
   getTaskDetailApi,
   getTaskHistoryApi,
+  getTaskProgressTreeApi,
   getTaskSubmissionsApi,
   getTaskSubtasksApi,
   getSubtaskAssigneesApi,
@@ -77,6 +79,7 @@ import {
 import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
+import TaskProgressTree from './TaskProgressTree'
 import {
   formatDateTime,
   getPriorityLabel,
@@ -104,6 +107,7 @@ const actionLabels = {
 }
 
 const workspaceTabs = new Set([
+  'progress',
   'checklist',
   'submissions',
   'comments',
@@ -143,6 +147,8 @@ export default function UserTaskDetailPage() {
     can_toggle: false,
   })
   const [subtasks, setSubtasks] = useState([])
+  const [progressTree, setProgressTree] = useState(null)
+  const [progressTreeLoading, setProgressTreeLoading] = useState(false)
   const [history, setHistory] = useState([])
   const [attachments, setAttachments] = useState([])
   const [assignees, setAssignees] = useState([])
@@ -182,7 +188,15 @@ export default function UserTaskDetailPage() {
     && selectedSubtaskAssigneeData.department_id !== user.department_id,
   )
   const requestedWorkspaceTab = searchParams.get('tab')
-  const activeWorkspaceTab = workspaceTabs.has(requestedWorkspaceTab)
+  const canViewProgressTree = Boolean(
+    task
+    && task.created_by === user.id
+    && !task.parent_task_id
+  )
+  const activeWorkspaceTab = (
+    workspaceTabs.has(requestedWorkspaceTab)
+    && (requestedWorkspaceTab !== 'progress' || canViewProgressTree)
+  )
     ? requestedWorkspaceTab
     : 'submissions'
 
@@ -235,12 +249,28 @@ export default function UserTaskDetailPage() {
       setSubtasks(subtasksRes.data.subtasks || [])
       setHistory(historyRes.data.logs || [])
       setAttachments(attachmentRes.data.attachments || [])
+
+      const nextTask = taskRes.data.task
+      if (nextTask.created_by === user.id && !nextTask.parent_task_id) {
+        setProgressTreeLoading(true)
+        try {
+          const progressResponse = await getTaskProgressTreeApi(taskId)
+          setProgressTree(progressResponse.data)
+        } catch {
+          setProgressTree(null)
+        } finally {
+          setProgressTreeLoading(false)
+        }
+      } else {
+        setProgressTree(null)
+        setProgressTreeLoading(false)
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải chi tiết công việc.')
     } finally {
       setLoading(false)
     }
-  }, [taskId])
+  }, [taskId, user.id])
 
   useEffect(() => {
     Promise.resolve().then(loadDetail)
@@ -274,18 +304,32 @@ export default function UserTaskDetailPage() {
     }
   }, [taskId])
 
+  const refreshProgressTree = useCallback(async () => {
+    if (!canViewProgressTree) return
+
+    try {
+      const response = await getTaskProgressTreeApi(taskId)
+      setProgressTree(response.data)
+    } catch {
+      // The fallback detail refresh owns the user-facing error state.
+    }
+  }, [canViewProgressTree, taskId])
+
   const refreshRealtimeDetail = useCallback((event) => {
     if (event?.action === 'COMMENT_CREATED') {
       refreshComments()
       return
     }
     if (event?.action?.startsWith('CHECKLIST_')) {
-      refreshChecklist()
+      if (!event.reference_id || event.reference_id === taskId) {
+        refreshChecklist()
+      }
+      refreshProgressTree()
       return
     }
 
     loadDetail()
-  }, [loadDetail, refreshChecklist, refreshComments])
+  }, [loadDetail, refreshChecklist, refreshComments, refreshProgressTree, taskId])
 
   useRealtimeRefresh(refreshRealtimeDetail, 'task')
 
@@ -849,6 +893,22 @@ export default function UserTaskDetailPage() {
               activeKey={activeWorkspaceTab}
               onChange={changeWorkspaceTab}
               items={[
+                ...(canViewProgressTree ? [{
+                  key: 'progress',
+                  label: (
+                    <span className={styles.tabLabel}>
+                      <FiGitBranch />
+                      Tiến độ tổng quan
+                    </span>
+                  ),
+                  children: (
+                    <TaskProgressTree
+                      data={progressTree}
+                      loading={progressTreeLoading}
+                      onOpenTask={(id) => navigate(`/app/tasks/${id}`)}
+                    />
+                  ),
+                }] : []),
                 {
                   key: 'checklist',
                   label: (
