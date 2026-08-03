@@ -190,7 +190,7 @@ export default function UserTaskDetailPage() {
   const requestedWorkspaceTab = searchParams.get('tab')
   const canViewProgressTree = Boolean(
     task
-    && task.created_by === user.id
+    && [task.created_by, task.assigned_to].includes(user.id)
     && !task.parent_task_id
   )
   const activeWorkspaceTab = (
@@ -251,7 +251,10 @@ export default function UserTaskDetailPage() {
       setAttachments(attachmentRes.data.attachments || [])
 
       const nextTask = taskRes.data.task
-      if (nextTask.created_by === user.id && !nextTask.parent_task_id) {
+      if (
+        [nextTask.created_by, nextTask.assigned_to].includes(user.id)
+        && !nextTask.parent_task_id
+      ) {
         setProgressTreeLoading(true)
         try {
           const progressResponse = await getTaskProgressTreeApi(taskId)
