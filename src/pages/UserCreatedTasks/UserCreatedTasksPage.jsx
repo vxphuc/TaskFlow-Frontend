@@ -1,4 +1,4 @@
-import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Skeleton, Space, Switch, message } from 'antd'
+import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Pagination, Select, Skeleton, Space, Switch, message } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
@@ -22,12 +22,15 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { formatDateTime, getPriorityLabel, getStatusLabel, priorityOptions, taskStatuses } from '../../utils/task'
 import styles from './UserCreatedTasksPage.module.css'
 
+const SUBTASKS_PER_PAGE = 10
+
 export default function UserCreatedTasksPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [tasks, setTasks] = useState(null)
   const [createdSubtasks, setCreatedSubtasks] = useState([])
+  const [subtaskPage, setSubtaskPage] = useState(1)
   const [assignees, setAssignees] = useState([])
   const [assigneeDepartments, setAssigneeDepartments] = useState([])
   const [reviewers, setReviewers] = useState([])
@@ -56,7 +59,15 @@ export default function UserCreatedTasksPage() {
         getTaskAssigneeCandidatesApi(),
       ])
       setTasks(tasksRes.data.tasks || [])
-      setCreatedSubtasks(tasksRes.data.created_subtasks || [])
+      const nextCreatedSubtasks = tasksRes.data.created_subtasks || []
+      setCreatedSubtasks(nextCreatedSubtasks)
+      setSubtaskPage((currentPage) => Math.min(
+        currentPage,
+        Math.max(
+          1,
+          Math.ceil(nextCreatedSubtasks.length / SUBTASKS_PER_PAGE),
+        ),
+      ))
       setAssignees(usersRes.data.users || [])
       setAssigneeDepartments(usersRes.data.departments || [])
     } catch (err) {
@@ -104,6 +115,14 @@ export default function UserCreatedTasksPage() {
     ),
     [assignees, selectedDepartment],
   )
+
+  const paginatedCreatedSubtasks = useMemo(() => {
+    const startIndex = (subtaskPage - 1) * SUBTASKS_PER_PAGE
+    return createdSubtasks.slice(
+      startIndex,
+      startIndex + SUBTASKS_PER_PAGE,
+    )
+  }, [createdSubtasks, subtaskPage])
 
   const createTask = async (values) => {
     setSubmitting(true)
@@ -193,8 +212,26 @@ export default function UserCreatedTasksPage() {
           <span>task chính · {createdSubtasks.length} subtask bạn đã giao</span>
         </div>
         <div className={styles.filters}>
-          <Select allowClear placeholder="Tất cả trạng thái" options={taskStatuses} value={status} onChange={setStatus} />
-          <Select allowClear placeholder="Mọi mức ưu tiên" options={priorityOptions} value={priority} onChange={setPriority} />
+          <Select
+            allowClear
+            placeholder="Tất cả trạng thái"
+            options={taskStatuses}
+            value={status}
+            onChange={(value) => {
+              setStatus(value)
+              setSubtaskPage(1)
+            }}
+          />
+          <Select
+            allowClear
+            placeholder="Mọi mức ưu tiên"
+            options={priorityOptions}
+            value={priority}
+            onChange={(value) => {
+              setPriority(value)
+              setSubtaskPage(1)
+            }}
+          />
         </div>
       </section>
 
@@ -282,7 +319,7 @@ export default function UserCreatedTasksPage() {
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Bạn chưa giao subtask nào" />
             ) : (
               <div className={`${styles.subtaskList} ${styles.createdSubtaskList}`}>
-                {createdSubtasks.map((subtask) => (
+                {paginatedCreatedSubtasks.map((subtask) => (
                   <button
                     type="button"
                     key={subtask.id}
@@ -306,6 +343,21 @@ export default function UserCreatedTasksPage() {
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+            {createdSubtasks.length > SUBTASKS_PER_PAGE && (
+              <div className={styles.subtaskPagination}>
+                <Pagination
+                  current={subtaskPage}
+                  pageSize={SUBTASKS_PER_PAGE}
+                  total={createdSubtasks.length}
+                  showSizeChanger={false}
+                  responsive
+                  onChange={setSubtaskPage}
+                  showTotal={(total, range) => (
+                    `${range[0]}-${range[1]} trên ${total} subtask`
+                  )}
+                />
               </div>
             )}
           </section>

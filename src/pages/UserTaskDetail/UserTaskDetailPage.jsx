@@ -66,6 +66,7 @@ import {
   startTaskApi,
   submitTaskApi,
   toggleTaskChecklistItemApi,
+  updateTaskApi,
   updateTaskChecklistItemApi,
   updateTaskDeadlineApi,
   updateTaskSubtaskPolicyApi,
@@ -89,6 +90,7 @@ const actionLabels = {
   ATTACHMENT_DELETED: 'Đã xóa file đính kèm',
   ATTACHMENT_UPLOADED: 'Đã tải file đính kèm',
   TASK_CREATED: 'Đã tạo công việc',
+  TASK_UPDATED: 'Đã chỉnh sửa công việc',
   TASK_STARTED: 'Đã bắt đầu thực hiện',
   TASK_SUBMITTED: 'Đã gửi kết quả',
   SUBMISSION_WITHDRAWN: 'Đã thu hồi kết quả',
@@ -411,6 +413,14 @@ export default function UserTaskDetailPage() {
     if (actionModal === 'cancel') {
       return runAction(() => cancelTaskApi(taskId, { reason: values.reason }))
     }
+    if (actionModal === 'edit') {
+      return runAction(() => updateTaskApi(taskId, {
+        title: values.title,
+        description: values.description,
+        priority: values.priority,
+        due_date: values.due_date?.toISOString() || null,
+      }))
+    }
     if (actionModal === 'subtask') {
       return runAction(async () => {
         const response = await createSubtaskApi(taskId, {
@@ -485,6 +495,14 @@ export default function UserTaskDetailPage() {
   }
 
   const openActionModal = (modalName) => {
+    if (modalName === 'edit') {
+      actionForm.setFieldsValue({
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        due_date: task.due_date ? dayjs(task.due_date) : null,
+      })
+    }
     if (modalName === 'subtask') {
       const defaultDepartmentId = assigneeDepartments.some(
         (department) => department.id === user.department_id,
@@ -720,6 +738,17 @@ export default function UserTaskDetailPage() {
     if (isReviewer && task.status === 'REVIEWING' && latestSubmission) {
       items.push({ key: 'approve', label: 'Duyệt hoàn thành', icon: <FiCheck />, primary: true, modal: 'approve' })
       items.push({ key: 'reject', label: 'Yêu cầu làm lại', icon: <FiX />, danger: true, modal: 'reject' })
+    }
+    if (
+      isCreator
+      && ['TODO', 'IN_PROGRESS', 'REJECTED'].includes(task.status)
+    ) {
+      items.push({
+        key: 'edit',
+        label: task.parent_task_id ? 'Sửa subtask' : 'Sửa task',
+        icon: <FiEdit2 />,
+        modal: 'edit',
+      })
     }
     if (isCreator && isTaskOpen(task.status)) {
       items.push({ key: 'deadline', label: 'Đổi deadline', icon: <FiCalendar />, modal: 'deadline' })
@@ -1188,6 +1217,7 @@ export default function UserTaskDetailPage() {
           reject: 'Yêu cầu làm lại',
           deadline: 'Thay đổi deadline',
           cancel: 'Hủy công việc',
+          edit: task?.parent_task_id ? 'Sửa subtask' : 'Sửa task',
           subtask: 'Tạo công việc con',
         }[actionModal]}
         open={Boolean(actionModal)}
@@ -1228,6 +1258,40 @@ export default function UserTaskDetailPage() {
                 className={styles.fullWidth}
               />
             </Form.Item>
+          )}
+          {actionModal === 'edit' && (
+            <>
+              <Form.Item
+                name="title"
+                label="Tiêu đề"
+                rules={[
+                  { required: true, message: 'Nhập tiêu đề công việc' },
+                  { max: 200, message: 'Tiêu đề tối đa 200 ký tự' },
+                ]}
+              >
+                <Input placeholder="Nhập tiêu đề công việc" />
+              </Form.Item>
+              <Form.Item name="description" label="Mô tả">
+                <Input.TextArea
+                  rows={4}
+                  placeholder="Mục tiêu, yêu cầu và kết quả mong đợi"
+                />
+              </Form.Item>
+              <div className={styles.formGrid}>
+                <Form.Item name="priority" label="Ưu tiên">
+                  <Select options={priorityOptions} />
+                </Form.Item>
+                <Form.Item name="due_date" label="Deadline">
+                  <DatePicker
+                    allowClear
+                    showTime
+                    needConfirm={false}
+                    format="DD/MM/YYYY HH:mm"
+                    className={styles.fullWidth}
+                  />
+                </Form.Item>
+              </div>
+            </>
           )}
           {actionModal === 'subtask' && (
             <>

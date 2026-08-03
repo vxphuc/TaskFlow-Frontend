@@ -32,6 +32,9 @@ export const getTaskReviewerCandidatesApi = (assignedTo) =>
 export const getTaskDetailApi = (taskId) =>
   axiosClient.get(`/api/tasks/${taskId}`)
 
+export const updateTaskApi = (taskId, data) =>
+  axiosClient.patch(`/api/tasks/${taskId}`, data)
+
 export const startTaskApi = (taskId) =>
   axiosClient.patch(`/api/tasks/${taskId}/start`)
 
