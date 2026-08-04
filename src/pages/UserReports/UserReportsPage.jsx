@@ -1,4 +1,4 @@
-import { Alert, DatePicker, Empty, Progress, Segmented, Skeleton } from 'antd'
+import { Alert, DatePicker, Empty, Pagination, Progress, Segmented, Select, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -17,19 +17,23 @@ import {
   getMyMonthlyReportApi,
 } from '../../api/reportApi'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
-import { formatDateTime, getStatusLabel } from '../../utils/task'
+import { formatDateTime, getStatusLabel, taskStatuses } from '../../utils/task'
 import styles from './UserReportsPage.module.css'
 
 const views = [
   { label: 'Tôi thực hiện', value: 'assignee' },
   { label: 'Tôi giao việc', value: 'assigner' },
 ]
+const ASSIGNEES_PER_PAGE = 6
 
 export default function UserReportsPage() {
   const navigate = useNavigate()
   const [month, setMonth] = useState(dayjs())
   const [view, setView] = useState('assignee')
   const [taskKind, setTaskKind] = useState('ALL')
+  const [taskStatus, setTaskStatus] = useState()
+  const [assigneeDepartment, setAssigneeDepartment] = useState()
+  const [assigneePage, setAssigneePage] = useState(1)
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
 
@@ -57,11 +61,42 @@ export default function UserReportsPage() {
   const workItemBreakdown = report?.work_item_breakdown || {}
   const filteredTasks = useMemo(
     () => report?.tasks?.filter((task) => {
+      if (taskStatus && task.status !== taskStatus) return false
       if (taskKind === 'MAIN_TASK') return !task.parent_task_id
       if (taskKind === 'SUBTASK') return Boolean(task.parent_task_id)
       return true
     }) || [],
-    [report, taskKind],
+    [report, taskKind, taskStatus],
+  )
+  const departmentOptions = useMemo(() => {
+    const departments = new Map()
+    for (const item of report?.assignee_breakdown || []) {
+      if (item.department_id) {
+        departments.set(
+          item.department_id,
+          item.department_name || 'Phòng ban chưa xác định',
+        )
+      }
+    }
+    return [...departments.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((left, right) => left.label.localeCompare(right.label, 'vi'))
+  }, [report])
+  const filteredAssignees = useMemo(
+    () => (report?.assignee_breakdown || []).filter(
+      (item) => !assigneeDepartment
+        || item.department_id === assigneeDepartment,
+    ),
+    [assigneeDepartment, report],
+  )
+  const assigneePages = Math.max(
+    1,
+    Math.ceil(filteredAssignees.length / ASSIGNEES_PER_PAGE),
+  )
+  const currentAssigneePage = Math.min(assigneePage, assigneePages)
+  const visibleAssignees = filteredAssignees.slice(
+    (currentAssigneePage - 1) * ASSIGNEES_PER_PAGE,
+    currentAssigneePage * ASSIGNEES_PER_PAGE,
   )
   const stats = useMemo(() => {
     if (!report) return []
@@ -95,13 +130,27 @@ export default function UserReportsPage() {
           picker="month"
           allowClear={false}
           value={month}
-          onChange={(value) => value && setMonth(value)}
+          onChange={(value) => {
+            if (!value) return
+            setMonth(value)
+            setAssigneeDepartment(undefined)
+            setAssigneePage(1)
+          }}
           format="MM/YYYY"
         />
       </header>
 
       <div className={styles.viewSwitch}>
-        <Segmented options={views} value={view} onChange={setView} block />
+        <Segmented
+          options={views}
+          value={view}
+          onChange={(value) => {
+            setView(value)
+            setAssigneeDepartment(undefined)
+            setAssigneePage(1)
+          }}
+          block
+        />
       </div>
 
       {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
@@ -175,24 +224,53 @@ export default function UserReportsPage() {
             <section className={styles.section}>
               <div className={styles.sectionHeading}>
                 <div><h2>Hiệu suất người nhận việc</h2><p>Tổng hợp các nhân sự bạn đã giao task trong tháng.</p></div>
-                <FiUsers />
-              </div>
-              {!report.assignee_breakdown?.length ? <Empty description="Chưa có dữ liệu nhân sự" /> : (
-                <div className={styles.peopleList}>
-                  <div className={styles.peopleHeader}>
-                    <span>Nhân sự</span><span>Task chính</span><span>Subtask</span><span>Hoàn thành</span><span>Quá hạn</span><span>Trả lại</span>
-                  </div>
-                  {report.assignee_breakdown.map((item) => (
-                    <div className={styles.personRow} key={item.user_id}>
-                      <strong>{item.full_name || 'Nhân sự'}</strong>
-                      <span>{item.main_task_count || 0}</span>
-                      <span>{item.subtask_count || 0}</span>
-                      <span data-tone="completed">{item.completed_tasks}</span>
-                      <span data-tone="overdue">{item.overdue_tasks}</span>
-                      <span data-tone="returned">{item.total_rejections}</span>
-                    </div>
-                  ))}
+                <div className={styles.peopleActions}>
+                  <Select
+                    allowClear
+                    value={assigneeDepartment}
+                    placeholder="Tất cả phòng ban"
+                    options={departmentOptions}
+                    onChange={(value) => {
+                      setAssigneeDepartment(value)
+                      setAssigneePage(1)
+                    }}
+                    aria-label="Lọc hiệu suất theo phòng ban"
+                  />
+                  <FiUsers />
                 </div>
+              </div>
+              {!filteredAssignees.length ? <Empty description="Không có nhân sự phù hợp" /> : (
+                <>
+                  <div className={styles.peopleList}>
+                    <div className={styles.peopleHeader}>
+                      <span>Nhân sự</span><span>Task chính</span><span>Subtask</span><span>Hoàn thành</span><span>Quá hạn</span><span>Trả lại</span>
+                    </div>
+                    {visibleAssignees.map((item) => (
+                      <div className={styles.personRow} key={item.user_id}>
+                        <strong>
+                          {item.full_name || 'Nhân sự'}
+                          <small>{item.department_name || 'Chưa có phòng ban'}</small>
+                        </strong>
+                        <span>{item.main_task_count || 0}</span>
+                        <span>{item.subtask_count || 0}</span>
+                        <span data-tone="completed">{item.completed_tasks}</span>
+                        <span data-tone="overdue">{item.overdue_tasks}</span>
+                        <span data-tone="returned">{item.total_rejections}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {filteredAssignees.length > ASSIGNEES_PER_PAGE && (
+                    <div className={styles.pagination}>
+                      <Pagination
+                        current={currentAssigneePage}
+                        pageSize={ASSIGNEES_PER_PAGE}
+                        total={filteredAssignees.length}
+                        showSizeChanger={false}
+                        onChange={setAssigneePage}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </section>
           )}
@@ -200,16 +278,26 @@ export default function UserReportsPage() {
           <section className={styles.section}>
             <div className={styles.sectionHeading}>
               <div><h2>Chi tiết công việc</h2><p>{filteredTasks.length} công việc phù hợp.</p></div>
-              <Segmented
-                size="small"
-                value={taskKind}
-                onChange={setTaskKind}
-                options={[
-                  { value: 'ALL', label: 'Tất cả' },
-                  { value: 'MAIN_TASK', label: 'Task chính' },
-                  { value: 'SUBTASK', label: 'Subtask' },
-                ]}
-              />
+              <div className={styles.detailFilters}>
+                <Segmented
+                  size="small"
+                  value={taskKind}
+                  onChange={setTaskKind}
+                  options={[
+                    { value: 'ALL', label: 'Tất cả' },
+                    { value: 'MAIN_TASK', label: 'Task chính' },
+                    { value: 'SUBTASK', label: 'Subtask' },
+                  ]}
+                />
+                <Select
+                  allowClear
+                  value={taskStatus}
+                  placeholder="Tất cả trạng thái"
+                  options={taskStatuses}
+                  onChange={setTaskStatus}
+                  aria-label="Lọc chi tiết công việc theo trạng thái"
+                />
+              </div>
             </div>
             {!filteredTasks.length ? <Empty description="Không có công việc phù hợp" /> : (
               <div className={styles.taskList}>

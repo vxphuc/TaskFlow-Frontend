@@ -52,14 +52,22 @@
 .sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
 .sectionHeading h2 { margin-bottom: 4px; }
 .sectionHeading > svg { color: #206a37; font-size: 21px; }
+.peopleActions { display: flex; align-items: center; gap: 10px; }
+.peopleActions :global(.ant-select) { width: 220px; }
+.peopleActions > svg { color: #206a37; font-size: 21px; }
+.detailFilters { display: flex; align-items: center; gap: 10px; }
+.detailFilters :global(.ant-select) { width: 180px; }
 .peopleList { margin-top: 18px; overflow: hidden; border: 1px solid #e2e8e3; border-radius: 6px; }
 .peopleHeader, .personRow { display: grid; grid-template-columns: minmax(180px,1fr) repeat(5,100px); align-items: center; gap: 10px; padding: 0 14px; }
 .peopleHeader { min-height: 42px; color: #748179; background: #f6f8f6; font-size: 11px; font-weight: 700; }
 .personRow { min-height: 58px; border-top: 1px solid #e6ebe7; }
+.personRow > strong { display: grid; gap: 3px; }
+.personRow > strong small { overflow: hidden; color: #78857d; font-size: 10px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .personRow span { font-variant-numeric: tabular-nums; }
 .personRow span[data-tone='completed'] { color: #206a37; font-weight: 700; }
 .personRow span[data-tone='overdue'] { color: #d93f23; font-weight: 700; }
 .personRow span[data-tone='returned'] { color: #c76b12; font-weight: 700; }
+.pagination { display: flex; justify-content: center; padding-top: 18px; }
 .taskList { display: grid; gap: 8px; margin-top: 17px; }
 .taskList button { min-height: 62px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid #e0e7e2; border-radius: 6px; color: #293a30; background: #fff; cursor: pointer; text-align: left; }
 .taskList button:hover { border-color: #8eb29a; background: #f9fbf9; }
@@ -89,6 +97,10 @@
   .viewSwitch { width: 100%; }
   .sectionHeading { flex-direction: column; }
   .sectionHeading :global(.ant-segmented) { width: 100%; overflow-x: auto; }
+  .peopleActions, .detailFilters { width: 100%; }
+  .peopleActions :global(.ant-select), .detailFilters :global(.ant-select) { width: 100%; }
+  .peopleActions > svg { display: none; }
+  .detailFilters { align-items: stretch; flex-direction: column; }
   .peopleHeader { display: none; }
   .peopleList { display: grid; gap: 9px; border: 0; }
   .personRow { min-height: 105px; grid-template-columns: repeat(5,1fr); gap: 8px; padding: 14px; border: 1px solid #e2e8e3; border-radius: 6px; }

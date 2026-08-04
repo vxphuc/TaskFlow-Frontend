@@ -5,7 +5,9 @@
 .eyebrow { color: #206a37; font-size: 11px; font-weight: 800; }
 .alert { margin-bottom: 20px; }
 .statGrid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
-.statCard { --stat-color: #206a37; --stat-soft: #eaf4ed; min-height: 136px; display: flex; gap: 15px; padding: 17px 19px 19px; border: 1px solid #dfe7e1; border-top: 3px solid var(--stat-color); border-radius: 8px; background: #fff; }
+.statCard { --stat-color: #206a37; --stat-soft: #eaf4ed; width: 100%; min-height: 136px; display: flex; gap: 15px; padding: 17px 19px 19px; border: 1px solid #dfe7e1; border-top: 3px solid var(--stat-color); border-radius: 8px; color: inherit; background: #fff; font: inherit; text-align: left; cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.statCard:hover { border-color: var(--stat-color); box-shadow: 0 7px 20px rgba(28, 67, 40, .09); transform: translateY(-1px); }
+.statCard:focus-visible { outline: 3px solid color-mix(in srgb, var(--stat-color) 28%, transparent); outline-offset: 2px; }
 .statCard.pending { --stat-color: #c98500; --stat-soft: #fff5cc; }
 .statCard.review { --stat-color: #1677c8; --stat-soft: #e8f3ff; }
 .statCard.completed { --stat-color: #206a37; --stat-soft: #eaf4ed; }
@@ -21,6 +23,9 @@
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .sectionHeading h2, .performance h2 { margin: 0 0 4px; font-size: 18px; }
 .sectionHeading button { display: inline-flex; align-items: center; gap: 6px; padding-right: 0; color: #206a37; }
+.taskCount { display: inline-flex; align-items: center; gap: 6px; color: #42604b; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.teamFilters { display: grid; grid-template-columns: minmax(180px, 220px) minmax(200px, 280px); gap: 10px; margin-top: 18px; padding: 14px; border: 1px solid #e3e9e5; background: #f8faf8; }
+.teamFilters :global(.ant-select) { width: 100%; }
 .taskList { display: grid; margin-top: 17px; border-top: 1px solid #e7ece8; }
 .taskRow { min-height: 86px; display: grid; grid-template-columns: 8px minmax(0,1fr) auto 18px; align-items: center; gap: 13px; padding: 11px 4px; border: 0; border-bottom: 1px solid #e7ece8; color: #26372c; background: #fff; cursor: pointer; text-align: left; }
 .taskRow:hover { background: #f8fbf9; }
@@ -31,6 +36,9 @@
 .taskBody { min-width: 0; display: grid; gap: 5px; }
 .taskBody strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .taskBody small { color: #76837b; }
+.taskTitle { min-width: 0; display: flex; align-items: center; gap: 8px; }
+.taskTitle strong { min-width: 0; }
+.workType { flex: 0 0 auto; padding: 2px 6px; border-radius: 3px; color: #206a37 !important; background: #e9f3ec; font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .taskPeople { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; }
 .taskPeople span { display: inline-flex; align-items: center; gap: 4px; }
 .taskPeople svg { flex: 0 0 auto; color: #4c7458; }
@@ -43,6 +51,7 @@
 .performance > strong { margin: 12px 0 4px; }
 .performance p { font-size: 13px; }
 .empty { padding: 40px 10px; color: #7a877f; text-align: center; }
+.teamPagination { display: flex; justify-content: center; padding-top: 18px; }
 
 @media (max-width: 1100px) {
   .statGrid { grid-template-columns: repeat(2,1fr); }
@@ -57,7 +66,10 @@
   .section { padding: 16px; }
   .sectionHeading { align-items: flex-start; }
   .sectionHeading p { display: none; }
+  .teamFilters { grid-template-columns: 1fr; }
   .taskRow { grid-template-columns: 7px minmax(0,1fr) 16px; }
   .taskRow .status { grid-column: 2; width: max-content; }
   .taskBody small { white-space: normal; }
+  .taskTitle { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .teamPagination { overflow-x: auto; }
 }

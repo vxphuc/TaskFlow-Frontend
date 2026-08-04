@@ -8,7 +8,7 @@ import {
   FiSend,
   FiUser,
 } from 'react-icons/fi'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import {
   createTaskApi,
   getMyCreatedTasksApi,
@@ -23,10 +23,17 @@ import { formatDateTime, getPriorityLabel, getStatusLabel, priorityOptions, task
 import styles from './UserCreatedTasksPage.module.css'
 
 const SUBTASKS_PER_PAGE = 10
+const quickViewOptions = [
+  { value: 'ACTIVE', label: 'Cần thực hiện' },
+  { value: 'WAITING_REVIEW', label: 'Chờ duyệt' },
+  { value: 'COMPLETED_MONTH', label: 'Hoàn thành tháng này' },
+  { value: 'OVERDUE', label: 'Đang quá hạn' },
+]
 
 export default function UserCreatedTasksPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [form] = Form.useForm()
   const [tasks, setTasks] = useState(null)
   const [createdSubtasks, setCreatedSubtasks] = useState([])
@@ -34,8 +41,9 @@ export default function UserCreatedTasksPage() {
   const [assignees, setAssignees] = useState([])
   const [assigneeDepartments, setAssigneeDepartments] = useState([])
   const [reviewers, setReviewers] = useState([])
-  const [status, setStatus] = useState()
-  const [priority, setPriority] = useState()
+  const [view, setView] = useState(searchParams.get('view') || undefined)
+  const [status, setStatus] = useState(searchParams.get('status') || undefined)
+  const [priority, setPriority] = useState(searchParams.get('priority') || undefined)
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [creationFiles, setCreationFiles] = useState([])
@@ -55,7 +63,7 @@ export default function UserCreatedTasksPage() {
     setError('')
     try {
       const [tasksRes, usersRes] = await Promise.all([
-        getMyCreatedTasksApi({ status, priority }),
+        getMyCreatedTasksApi({ view, status, priority }),
         getTaskAssigneeCandidatesApi(),
       ])
       setTasks(tasksRes.data.tasks || [])
@@ -73,7 +81,28 @@ export default function UserCreatedTasksPage() {
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải dữ liệu giao việc.')
     }
-  }, [status, priority])
+  }, [view, status, priority])
+
+  useEffect(() => {
+    const nextView = searchParams.get('view') || undefined
+    const nextStatus = searchParams.get('status') || undefined
+    const nextPriority = searchParams.get('priority') || undefined
+    Promise.resolve().then(() => {
+      setView(nextView)
+      setStatus(nextStatus)
+      setPriority(nextPriority)
+    })
+  }, [searchParams])
+
+  const updateFilters = useCallback((changes) => {
+    const next = new URLSearchParams(searchParams)
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    })
+    setSearchParams(next, { replace: true })
+    setSubtaskPage(1)
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     Promise.resolve().then(loadData)
@@ -214,12 +243,24 @@ export default function UserCreatedTasksPage() {
         <div className={styles.filters}>
           <Select
             allowClear
+            placeholder="Bộ lọc nhanh"
+            options={quickViewOptions}
+            value={view}
+            onChange={(value) => {
+              setView(value)
+              setStatus(undefined)
+              updateFilters({ view: value, status: undefined })
+            }}
+          />
+          <Select
+            allowClear
             placeholder="Tất cả trạng thái"
             options={taskStatuses}
             value={status}
             onChange={(value) => {
               setStatus(value)
-              setSubtaskPage(1)
+              setView(undefined)
+              updateFilters({ status: value, view: undefined })
             }}
           />
           <Select
@@ -229,7 +270,7 @@ export default function UserCreatedTasksPage() {
             value={priority}
             onChange={(value) => {
               setPriority(value)
-              setSubtaskPage(1)
+              updateFilters({ priority: value })
             }}
           />
         </div>

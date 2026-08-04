@@ -9,6 +9,7 @@
 .summary strong { color: #17211a; font-size: 21px; }
 .filters { display: flex; gap: 10px; }
 .filters :global(.ant-select) { width: 180px; }
+.filters :global(.ant-select:first-child) { width: 210px; }
 .alert { margin-bottom: 16px; }
 .taskGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
 .taskCard { min-width: 0; overflow: hidden; border: 1px solid #dfe7e1; border-radius: 8px; color: #26372c; background: #fff; }
@@ -64,7 +65,7 @@
   .pageHeader { align-items: stretch; flex-direction: column; }
   .pageHeader h1 { font-size: 24px; }
   .toolbar { align-items: stretch; flex-direction: column; }
-  .filters { display: grid; grid-template-columns: 1fr 1fr; }
+  .filters { display: grid; grid-template-columns: 1fr; }
   .filters :global(.ant-select) { width: 100%; }
   .taskGrid { grid-template-columns: 1fr; }
   .taskMain { min-height: 190px; }

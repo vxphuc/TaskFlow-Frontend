@@ -1,6 +1,13 @@
-import { Alert, Button, Progress, Skeleton, Space } from 'antd'
+import { Alert, Button, Pagination, Progress, Select, Skeleton, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiArrowRight, FiCheckCircle, FiClock, FiInbox, FiSend } from 'react-icons/fi'
+import {
+  FiArrowRight,
+  FiCheckCircle,
+  FiClock,
+  FiInbox,
+  FiSend,
+  FiUsers,
+} from 'react-icons/fi'
 import { useNavigate } from 'react-router'
 import { getMyMonthlyReportApi } from '../../api/reportApi'
 import {
@@ -8,16 +15,27 @@ import {
   getMyCreatedTasksApi,
   getPersonalReviewQueueApi,
   getPersonalTasksApi,
+  getTeamTaskOverviewApi,
 } from '../../api/taskApi'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
-import { formatDateTime, getPriorityLabel, getStatusLabel } from '../../utils/task'
+import {
+  formatDateTime,
+  getPriorityLabel,
+  getStatusLabel,
+  taskStatuses,
+} from '../../utils/task'
 import styles from './UserDashboardPage.module.css'
 
 export default function UserDashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
+  const [teamOverview, setTeamOverview] = useState(null)
+  const [teamLoading, setTeamLoading] = useState(true)
+  const [teamStatus, setTeamStatus] = useState('ACTIVE')
+  const [teamDepartment, setTeamDepartment] = useState()
+  const [teamPage, setTeamPage] = useState(1)
   const [error, setError] = useState('')
 
   const loadDashboard = useCallback(async () => {
@@ -41,6 +59,7 @@ export default function UserDashboardPage() {
       setData({
         assigned: assignedRes.data.tasks || [],
         created: createdRes.data.tasks || [],
+        createdSubtasks: createdRes.data.created_subtasks || [],
         personal: personalRes.data.tasks || [],
         review: reviewRes.data.tasks || [],
         report: reportRes.data.report || {},
@@ -50,27 +69,69 @@ export default function UserDashboardPage() {
     }
   }, [])
 
+  const loadTeamOverview = useCallback(async () => {
+    setTeamLoading(true)
+    try {
+      const response = await getTeamTaskOverviewApi({
+        status: teamStatus,
+        department_id: teamDepartment,
+        page: teamPage,
+      })
+      setTeamOverview(response.data)
+      if (response.data.page && response.data.page !== teamPage) {
+        setTeamPage(response.data.page)
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message
+        || 'Không thể tải công việc của đội nhóm.',
+      )
+    } finally {
+      setTeamLoading(false)
+    }
+  }, [teamDepartment, teamPage, teamStatus])
+
   useEffect(() => {
     Promise.resolve().then(loadDashboard)
   }, [loadDashboard])
 
-  useRealtimeRefresh(loadDashboard, 'task')
+  useEffect(() => {
+    Promise.resolve().then(loadTeamOverview)
+  }, [loadTeamOverview])
+
+  const refreshDashboard = useCallback(() => {
+    loadDashboard()
+    loadTeamOverview()
+  }, [loadDashboard, loadTeamOverview])
+
+  useRealtimeRefresh(refreshDashboard, 'task')
 
   const stats = useMemo(() => {
     if (!data) return []
-    const active = [...data.assigned, ...data.personal].filter((task) =>
+    const createdWork = [...data.created, ...data.createdSubtasks]
+    const now = new Date()
+    const active = createdWork.filter((task) =>
       ['TODO', 'IN_PROGRESS', 'REJECTED'].includes(task.status),
     ).length
-    const waiting = [...data.created, ...data.review].filter((task) =>
+    const waiting = createdWork.filter((task) =>
       ['SUBMITTED', 'REVIEWING'].includes(task.status),
     ).length
-    const completed = data.report.summary?.completed_tasks || 0
-    const overdue = data.report.summary?.overdue_tasks || 0
+    const completed = createdWork.filter((task) => {
+      if (task.status !== 'COMPLETED' || !task.completed_at) return false
+      const completedAt = new Date(task.completed_at)
+      return completedAt.getFullYear() === now.getFullYear()
+        && completedAt.getMonth() === now.getMonth()
+    }).length
+    const overdue = createdWork.filter((task) => (
+      task.due_date
+      && new Date(task.due_date) < now
+      && !['COMPLETED', 'CANCELLED'].includes(task.status)
+    )).length
     return [
-      { label: 'Cần thực hiện', value: active, note: 'Task đang chờ bạn xử lý', icon: <FiInbox />, tone: 'pending' },
-      { label: 'Chờ bạn duyệt', value: waiting, note: 'Kết quả từ người nhận việc', icon: <FiClock />, tone: 'review' },
-      { label: 'Hoàn thành tháng này', value: completed, note: 'Theo thời điểm được giao', icon: <FiCheckCircle />, tone: 'completed' },
-      { label: 'Đang quá hạn', value: overdue, note: 'Cần ưu tiên xử lý', icon: <FiSend />, tone: 'overdue' },
+      { label: 'Cần thực hiện', value: active, note: 'Task đang chờ người nhận xử lý', icon: <FiInbox />, tone: 'pending', view: 'ACTIVE' },
+      { label: 'Chờ bạn duyệt', value: waiting, note: 'Kết quả đang chờ duyệt', icon: <FiClock />, tone: 'review', view: 'WAITING_REVIEW' },
+      { label: 'Hoàn thành tháng này', value: completed, note: 'Theo thời điểm hoàn thành', icon: <FiCheckCircle />, tone: 'completed', view: 'COMPLETED_MONTH' },
+      { label: 'Đang quá hạn', value: overdue, note: 'Cần ưu tiên theo dõi', icon: <FiSend />, tone: 'overdue', view: 'OVERDUE' },
     ]
   }, [data])
 
@@ -79,6 +140,10 @@ export default function UserDashboardPage() {
     .filter((task) => !['COMPLETED', 'CANCELLED'].includes(task.status))
     .slice(0, 5)
     : []
+  const hasManagementScope = Boolean(teamOverview?.has_management_scope)
+  const visibleTasks = hasManagementScope
+    ? teamOverview.tasks || []
+    : focusTasks
   const completionRate = data?.report.summary?.completion_rate || 0
 
   return (
@@ -102,23 +167,83 @@ export default function UserDashboardPage() {
         <>
           <section className={styles.statGrid}>
             {stats.map((stat) => (
-              <article className={`${styles.statCard} ${styles[stat.tone]}`} key={stat.label}>
+              <button
+                type="button"
+                className={`${styles.statCard} ${styles[stat.tone]}`}
+                key={stat.label}
+                onClick={() => navigate(`/app/created?view=${stat.view}`)}
+                aria-label={`${stat.label}: ${stat.value}. Xem danh sách việc tôi giao`}
+              >
                 <span className={styles.statIcon}>{stat.icon}</span>
                 <div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div>
-              </article>
+              </button>
             ))}
           </section>
 
           <div className={styles.mainGrid}>
             <section className={styles.section}>
               <div className={styles.sectionHeading}>
-                <div><h2>Việc cần tập trung</h2><p>Các task đang chờ bạn thực hiện.</p></div>
-                <Button type="link" onClick={() => navigate('/app/assigned')}>Xem tất cả <FiArrowRight /></Button>
+                <div>
+                  <h2>{hasManagementScope ? 'Công việc đội nhóm' : 'Việc cần tập trung'}</h2>
+                  <p>
+                    {hasManagementScope
+                      ? 'Theo dõi công việc của cấp dưới và việc liên phòng do đội nhóm giao.'
+                      : 'Các task đang chờ bạn thực hiện.'}
+                  </p>
+                </div>
+                {hasManagementScope ? (
+                  <span className={styles.taskCount}>
+                    <FiUsers /> {teamOverview.total || 0} công việc
+                  </span>
+                ) : (
+                  <Button type="link" onClick={() => navigate('/app/assigned')}>
+                    Xem tất cả <FiArrowRight />
+                  </Button>
+                )}
               </div>
+
+              {hasManagementScope && (
+                <div className={styles.teamFilters}>
+                  <Select
+                    value={teamStatus}
+                    onChange={(value) => {
+                      setTeamStatus(value)
+                      setTeamPage(1)
+                    }}
+                    aria-label="Lọc theo trạng thái công việc"
+                    options={[
+                      { value: 'ACTIVE', label: 'Đang cần xử lý' },
+                      { value: 'ALL', label: 'Tất cả trạng thái' },
+                      ...taskStatuses,
+                    ]}
+                  />
+                  <Select
+                    allowClear
+                    value={teamDepartment}
+                    placeholder="Tất cả phòng ban"
+                    aria-label="Lọc theo phòng ban người thực hiện"
+                    onChange={(value) => {
+                      setTeamDepartment(value)
+                      setTeamPage(1)
+                    }}
+                    options={(teamOverview.departments || []).map((department) => ({
+                      value: department.id,
+                      label: department.name,
+                    }))}
+                  />
+                </div>
+              )}
+
               <div className={styles.taskList}>
-                {focusTasks.length === 0 ? (
-                  <div className={styles.empty}>Bạn chưa có công việc cần xử lý.</div>
-                ) : focusTasks.map((task) => (
+                {teamLoading && hasManagementScope ? (
+                  <Skeleton active paragraph={{ rows: 4 }} />
+                ) : visibleTasks.length === 0 ? (
+                  <div className={styles.empty}>
+                    {hasManagementScope
+                      ? 'Không có công việc phù hợp với bộ lọc.'
+                      : 'Bạn chưa có công việc cần xử lý.'}
+                  </div>
+                ) : visibleTasks.map((task) => (
                   <button
                     type="button"
                     key={task.id}
@@ -127,10 +252,25 @@ export default function UserDashboardPage() {
                   >
                     <span className={`${styles.priority} ${styles[task.priority.toLowerCase()]}`} />
                     <span className={styles.taskBody}>
-                      <strong>{task.title}</strong>
+                      <span className={styles.taskTitle}>
+                        {hasManagementScope && (
+                          <small className={styles.workType}>
+                            {task.work_type === 'SUBTASK' ? 'Subtask' : 'Task'}
+                          </small>
+                        )}
+                        <strong>{task.title}</strong>
+                      </span>
                       <small>{getPriorityLabel(task.priority)} · Hạn {formatDateTime(task.due_date)}</small>
                       <small className={styles.taskPeople}>
-                        {task.is_personal ? (
+                        {hasManagementScope ? (
+                          <span>
+                            <FiUsers />
+                            Người thực hiện: {task.assigned_to_name || 'Chưa xác định'}
+                            {task.assignee_department_name
+                              ? ` · ${task.assignee_department_name}`
+                              : ''}
+                          </span>
+                        ) : task.is_personal ? (
                           <span>
                             <FiCheckCircle />
                             {task.requires_review
@@ -139,6 +279,9 @@ export default function UserDashboardPage() {
                           </span>
                         ) : (
                           <span><FiSend /> Người giao: {task.created_by_name || 'Chưa xác định'}</span>
+                        )}
+                        {hasManagementScope && task.parent_task_title && (
+                          <span>Thuộc: {task.parent_task_title}</span>
                         )}
                       </small>
                     </span>
@@ -149,6 +292,17 @@ export default function UserDashboardPage() {
                   </button>
                 ))}
               </div>
+              {hasManagementScope && (teamOverview.total || 0) > (teamOverview.per_page || 6) && (
+                <div className={styles.teamPagination}>
+                  <Pagination
+                    current={teamPage}
+                    pageSize={teamOverview.per_page || 6}
+                    total={teamOverview.total || 0}
+                    showSizeChanger={false}
+                    onChange={setTeamPage}
+                  />
+                </div>
+              )}
             </section>
 
             <aside className={styles.performance}>
