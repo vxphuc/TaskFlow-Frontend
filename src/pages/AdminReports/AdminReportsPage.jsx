@@ -246,6 +246,7 @@ export default function AdminReportsPage() {
       groups[attachment.submission_id].push(attachment)
       return groups
     },
+    {},
   )
 
   const auditTabs = audit ? [
