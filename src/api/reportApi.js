@@ -10,6 +10,12 @@ export const getMyAssignerMonthlyReportApi = (year, month) =>
     params: { year, month },
   })
 
+export const exportMyMonthlyReportApi = (year, month, view) =>
+  axiosClient.get('/api/reports/me/monthly/export', {
+    params: { year, month, view },
+    responseType: 'blob',
+  })
+
 export const getDepartmentMonthlyReportApi = (departmentId, year, month) =>
   axiosClient.get(`/api/reports/departments/${departmentId}/monthly`, {
     params: { year, month },

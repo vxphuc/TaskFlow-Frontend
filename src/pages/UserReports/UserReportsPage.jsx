@@ -1,4 +1,4 @@
-import { Alert, DatePicker, Empty, Pagination, Progress, Segmented, Select, Skeleton } from 'antd'
+import { Alert, Button, DatePicker, Empty, Pagination, Progress, Segmented, Select, Skeleton, message } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -7,12 +7,14 @@ import {
   FiClipboard,
   FiClock,
   FiCornerDownRight,
+  FiDownload,
   FiRefreshCw,
   FiTarget,
   FiUsers,
 } from 'react-icons/fi'
 import { useNavigate } from 'react-router'
 import {
+  exportMyMonthlyReportApi,
   getMyAssignerMonthlyReportApi,
   getMyMonthlyReportApi,
 } from '../../api/reportApi'
@@ -35,6 +37,7 @@ export default function UserReportsPage() {
   const [assigneeDepartment, setAssigneeDepartment] = useState()
   const [assigneePage, setAssigneePage] = useState(1)
   const [report, setReport] = useState(null)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
 
   const loadReport = useCallback(async () => {
@@ -56,6 +59,46 @@ export default function UserReportsPage() {
   }, [loadReport])
 
   useRealtimeRefresh(loadReport, 'task')
+
+  const exportReport = async () => {
+    setExporting(true)
+    setError('')
+    try {
+      const response = await exportMyMonthlyReportApi(
+        month.year(),
+        month.month() + 1,
+        view,
+      )
+      const disposition = response.headers['content-disposition'] || ''
+      const matchedName = disposition.match(/filename="?([^";]+)"?/i)
+      const fallbackName = `taskflow_bao_cao_${view}_${month.format('YYYY_MM')}.xlsx`
+      const fileName = matchedName?.[1] || fallbackName
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      message.success('Đã xuất báo cáo Excel.')
+    } catch (err) {
+      let exportMessage = 'Không thể xuất báo cáo Excel.'
+      if (err.response?.data instanceof Blob) {
+        try {
+          const payload = JSON.parse(await err.response.data.text())
+          exportMessage = payload.message || exportMessage
+        } catch {
+          // Keep the fallback message for non-JSON download errors.
+        }
+      } else if (err.response?.data?.message) {
+        exportMessage = err.response.data.message
+      }
+      setError(exportMessage)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const summary = useMemo(() => report?.summary || {}, [report])
   const workItemBreakdown = report?.work_item_breakdown || {}
@@ -126,18 +169,29 @@ export default function UserReportsPage() {
           <h1>Hiệu suất theo tháng</h1>
           <p>Đánh giá tiến độ thực hiện và chất lượng giao việc trong cùng một nơi.</p>
         </div>
-        <DatePicker
-          picker="month"
-          allowClear={false}
-          value={month}
-          onChange={(value) => {
-            if (!value) return
-            setMonth(value)
-            setAssigneeDepartment(undefined)
-            setAssigneePage(1)
-          }}
-          format="MM/YYYY"
-        />
+        <div className={styles.headerActions}>
+          <DatePicker
+            picker="month"
+            allowClear={false}
+            value={month}
+            onChange={(value) => {
+              if (!value) return
+              setMonth(value)
+              setAssigneeDepartment(undefined)
+              setAssigneePage(1)
+            }}
+            format="MM/YYYY"
+          />
+          <Button
+            type="primary"
+            icon={<FiDownload />}
+            loading={exporting}
+            disabled={!report}
+            onClick={exportReport}
+          >
+            Xuất Excel
+          </Button>
+        </div>
       </header>
 
       <div className={styles.viewSwitch}>

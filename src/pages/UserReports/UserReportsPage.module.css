@@ -2,6 +2,8 @@
 .pageHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
 .pageHeader h1 { margin: 5px 0; font-size: 28px; line-height: 1.25; }
 .pageHeader p, .sectionHeading p { margin: 0; color: #68766d; }
+.headerActions { display: flex; align-items: center; gap: 10px; }
+.headerActions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .eyebrow { color: #206a37; font-size: 11px; font-weight: 800; }
 .viewSwitch { width: 360px; margin-bottom: 20px; padding: 4px; border: 1px solid #dfe7e1; border-radius: 7px; background: #fff; }
 .viewSwitch :global(.ant-segmented-item-selected) { color: #fff; background: #206a37; }
@@ -94,6 +96,7 @@
   .pageHeader { align-items: stretch; flex-direction: column; }
   .pageHeader h1 { font-size: 24px; }
   .pageHeader :global(.ant-picker) { width: 100%; }
+  .headerActions { display: grid; grid-template-columns: 1fr auto; }
   .viewSwitch { width: 100%; }
   .sectionHeading { flex-direction: column; }
   .sectionHeading :global(.ant-segmented) { width: 100%; overflow-x: auto; }
@@ -113,4 +116,6 @@
   .breakdownGrid { grid-template-columns: repeat(2,1fr); }
   .section, .breakdown { padding: 16px; }
   .taskList button { align-items: flex-start; grid-template-columns: 1fr; }
+  .headerActions { grid-template-columns: 1fr; }
+  .headerActions button { width: 100%; }
 }

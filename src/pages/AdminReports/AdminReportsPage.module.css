@@ -215,6 +215,16 @@
     display: grid; 
     place-items: center; 
 }
+.auditOverview { display: grid; gap: 18px; }
+.auditFiles { display: grid; gap: 10px; padding-top: 4px; }
+.auditFiles > header { display: flex; align-items: center; gap: 7px; color: #31563c; }
+.auditFiles > header svg { color: #206a37; }
+.auditFileList { display: grid; gap: 8px; }
+.auditFile { min-width: 0; display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 10px; padding: 10px 11px; border: 1px solid #dfe7e1; border-radius: 6px; background: #fff; }
+.auditFile > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 5px; color: #206a37; background: #eaf4ed; }
+.auditFile > div { min-width: 0; display: grid; gap: 3px; }
+.auditFile > div strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auditFile > div small { color: #77847c; font-size: 11px; }
 .auditList { 
     display: grid; 
     gap: 10px; 

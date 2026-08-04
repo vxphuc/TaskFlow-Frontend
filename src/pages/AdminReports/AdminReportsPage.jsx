@@ -13,15 +13,18 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
   message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
-import { FiActivity, FiBarChart2, FiCheckCircle, FiClock, FiEye, FiRefreshCw } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiCheckCircle, FiClock, FiDownload, FiEye, FiFile, FiRefreshCw } from 'react-icons/fi'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getDepartmentMonthlyReportApi, getUserMonthlyReportApi } from '../../api/reportApi'
 import {
+  downloadAttachmentApi,
   getTaskCommentsApi,
+  getTaskAttachmentsApi,
   getTaskDetailApi,
   getTaskHistoryApi,
   getTaskSubmissionsApi,
@@ -49,6 +52,13 @@ const priorityMeta = {
 
 const formatDate = (value) => value ? dayjs(value).format('DD/MM/YYYY HH:mm') : 'Chưa có'
 
+const formatFileSize = (value) => {
+  if (!Number.isFinite(value)) return '-'
+  if (value < 1024) return `${value} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function StatusTag({ status }) {
   const [label, color] = statusMeta[status] || [status, 'default']
   return <Tag color={color}>{label}</Tag>
@@ -67,6 +77,7 @@ export default function AdminReportsPage() {
   const [error, setError] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [auditLoading, setAuditLoading] = useState(false)
+  const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [audit, setAudit] = useState(null)
 
   useEffect(() => {
@@ -136,12 +147,13 @@ export default function AdminReportsPage() {
     setAuditLoading(true)
     setAudit(null)
     try {
-      const [detail, subtasks, submissions, comments, history] = await Promise.all([
+      const [detail, subtasks, submissions, comments, history, attachments] = await Promise.all([
         getTaskDetailApi(task.id),
         getTaskSubtasksApi(task.id),
         getTaskSubmissionsApi(task.id),
         getTaskCommentsApi(task.id),
         getTaskHistoryApi(task.id),
+        getTaskAttachmentsApi(task.id),
       ])
       setAudit({
         task: detail.data.task,
@@ -149,11 +161,31 @@ export default function AdminReportsPage() {
         submissions: submissions.data.submissions || [],
         comments: comments.data.comments || [],
         logs: history.data.logs || [],
+        attachments: attachments.data.attachments || [],
       })
     } catch (err) {
       message.error(err.response?.data?.message || 'Không thể tải chi tiết task.')
     } finally {
       setAuditLoading(false)
+    }
+  }
+
+  const downloadAttachment = async (attachment) => {
+    setAttachmentLoading(attachment.id)
+    try {
+      const response = await downloadAttachmentApi(attachment.id)
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = attachment.file_name
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Không thể tải file xuống.')
+    } finally {
+      setAttachmentLoading(null)
     }
   }
 
@@ -202,21 +234,71 @@ export default function AdminReportsPage() {
     { title: 'Lần trả lại', dataIndex: 'total_rejections', key: 'rejections', width: 105 },
   ]
 
+  const taskAttachments = audit?.attachments?.filter(
+    (attachment) => !attachment.submission_id,
+  ) || []
+  const attachmentsBySubmission = (audit?.attachments || []).reduce(
+    (groups, attachment) => {
+      if (!attachment.submission_id) return groups
+      if (!groups[attachment.submission_id]) {
+        groups[attachment.submission_id] = []
+      }
+      groups[attachment.submission_id].push(attachment)
+      return groups
+    },
+  )
+
   const auditTabs = audit ? [
     {
       key: 'overview', label: 'Tổng quan', children: (
-        <Descriptions column={1} size="small" bordered>
-          <Descriptions.Item label="Tiêu đề">{audit.task.title}</Descriptions.Item>
-          <Descriptions.Item label="Mô tả">{audit.task.description || 'Không có mô tả'}</Descriptions.Item>
-          <Descriptions.Item label="Người giao">{usersById[audit.task.created_by]?.full_name || audit.task.created_by}</Descriptions.Item>
-          <Descriptions.Item label="Người nhận">{usersById[audit.task.assigned_to]?.full_name || audit.task.assigned_to}</Descriptions.Item>
-          <Descriptions.Item label="Trạng thái"><StatusTag status={audit.task.status} /></Descriptions.Item>
-          <Descriptions.Item label="Thời hạn">{formatDate(audit.task.due_date)}</Descriptions.Item>
-        </Descriptions>
+        <div className={styles.auditOverview}>
+          <Descriptions column={1} size="small" bordered>
+            <Descriptions.Item label="Tiêu đề">{audit.task.title}</Descriptions.Item>
+            <Descriptions.Item label="Mô tả">{audit.task.description || 'Không có mô tả'}</Descriptions.Item>
+            <Descriptions.Item label="Người giao">{usersById[audit.task.created_by]?.full_name || audit.task.created_by}</Descriptions.Item>
+            <Descriptions.Item label="Người nhận">{usersById[audit.task.assigned_to]?.full_name || audit.task.assigned_to}</Descriptions.Item>
+            <Descriptions.Item label="Trạng thái"><StatusTag status={audit.task.status} /></Descriptions.Item>
+            <Descriptions.Item label="Thời hạn">{formatDate(audit.task.due_date)}</Descriptions.Item>
+          </Descriptions>
+          <AuditAttachmentList
+            title="Tệp yêu cầu"
+            items={taskAttachments}
+            empty="Task không có tệp yêu cầu"
+            loadingId={attachmentLoading}
+            onDownload={downloadAttachment}
+          />
+        </div>
       ),
     },
     { key: 'subtasks', label: `Subtask (${audit.subtasks.length})`, children: <AuditList items={audit.subtasks} empty="Không có subtask" renderItem={(item) => <><strong>{item.title}</strong><span><StatusTag status={item.status} /> · {usersById[item.assigned_to]?.full_name || 'Không xác định'}</span></>} /> },
-    { key: 'submissions', label: `Kết quả (${audit.submissions.length})`, children: <AuditList items={audit.submissions} empty="Chưa có kết quả nộp" renderItem={(item) => <><strong>Lần nộp {item.attempt_number}</strong><p>{item.content}</p><span>{formatDate(item.submitted_at)}</span></>} /> },
+    {
+      key: 'submissions',
+      label: `Kết quả (${audit.submissions.length})`,
+      children: (
+        <AuditList
+          items={audit.submissions}
+          empty="Chưa có kết quả nộp"
+          renderItem={(item) => {
+            const submissionAttachments = attachmentsBySubmission[item.id] || []
+            return (
+              <>
+                <strong>Lần nộp {item.attempt_number}</strong>
+                <p>{item.content}</p>
+                <span>{formatDate(item.submitted_at)}</span>
+                {submissionAttachments.length > 0 && (
+                  <AuditAttachmentList
+                    title="Tệp kết quả"
+                    items={submissionAttachments}
+                    loadingId={attachmentLoading}
+                    onDownload={downloadAttachment}
+                  />
+                )}
+              </>
+            )
+          }}
+        />
+      ),
+    },
     { key: 'comments', label: `Trao đổi (${audit.comments.length})`, children: <AuditList items={audit.comments} empty="Chưa có trao đổi" renderItem={(item) => <><strong>{usersById[item.user_id]?.full_name || 'Người dùng'}</strong><p>{item.content}</p><span>{formatDate(item.created_at)}</span></>} /> },
     { key: 'history', label: `Lịch sử (${audit.logs.length})`, children: <AuditList items={audit.logs} empty="Chưa có lịch sử" renderItem={(item) => <><strong>{item.action.replaceAll('_', ' ')}</strong><span>{formatDate(item.created_at)}</span></>} /> },
   ] : []
@@ -279,4 +361,44 @@ export default function AdminReportsPage() {
 function AuditList({ items, empty, renderItem }) {
   if (!items.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />
   return <div className={styles.auditList}>{items.map((item) => <article key={item.id}>{renderItem(item)}</article>)}</div>
+}
+
+function AuditAttachmentList({ title, items, empty, loadingId, onDownload }) {
+  return (
+    <section className={styles.auditFiles}>
+      <header>
+        <FiFile />
+        <strong>{title} ({items.length})</strong>
+      </header>
+      {!items.length ? (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={empty || 'Không có tệp đính kèm'}
+        />
+      ) : (
+        <div className={styles.auditFileList}>
+          {items.map((attachment) => (
+            <div className={styles.auditFile} key={attachment.id}>
+              <span><FiFile /></span>
+              <div>
+                <strong title={attachment.file_name}>{attachment.file_name}</strong>
+                <small>
+                  {formatFileSize(attachment.file_size)} · {formatDate(attachment.created_at)}
+                </small>
+              </div>
+              <Tooltip title="Tải file">
+                <Button
+                  type="text"
+                  icon={<FiDownload />}
+                  loading={loadingId === attachment.id}
+                  onClick={() => onDownload(attachment)}
+                  aria-label={`Tải ${attachment.file_name}`}
+                />
+              </Tooltip>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
 }
