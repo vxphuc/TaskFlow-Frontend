@@ -76,6 +76,17 @@ test.describe.serial('TaskFlow end-to-end', () => {
       await expectHealthyPage(page, heading)
     }
 
+    await page.goto('/app')
+    await expect(page.getByLabel('Lọc theo tên nhân viên')).toBeVisible()
+    await expect(page.getByLabel('Lọc theo tháng giao việc')).toBeVisible()
+
+    await page.goto('/app/team')
+    await page
+      .getByRole('button', { name: /Xem công việc đang thực hiện của Nhan vien E2E/ })
+      .click()
+    await expect(page.getByText('Công việc đang xử lý')).toBeVisible()
+    await expect(page.getByText('Task và Subtask chưa hoàn tất')).toBeVisible()
+
     expect(runtimeErrors).toEqual([])
     await context.close()
 

@@ -1,4 +1,4 @@
-import { Alert, Button, Pagination, Progress, Select, Skeleton, Space } from 'antd'
+import { Alert, Button, DatePicker, Pagination, Progress, Select, Skeleton, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
@@ -35,6 +35,8 @@ export default function UserDashboardPage() {
   const [teamLoading, setTeamLoading] = useState(true)
   const [teamStatus, setTeamStatus] = useState('ACTIVE')
   const [teamDepartment, setTeamDepartment] = useState()
+  const [teamAssignee, setTeamAssignee] = useState()
+  const [teamMonth, setTeamMonth] = useState(null)
   const [teamPage, setTeamPage] = useState(1)
   const [error, setError] = useState('')
 
@@ -75,6 +77,9 @@ export default function UserDashboardPage() {
       const response = await getTeamTaskOverviewApi({
         status: teamStatus,
         department_id: teamDepartment,
+        assignee_id: teamAssignee,
+        year: teamMonth?.year(),
+        month: teamMonth ? teamMonth.month() + 1 : undefined,
         page: teamPage,
       })
       setTeamOverview(response.data)
@@ -89,7 +94,7 @@ export default function UserDashboardPage() {
     } finally {
       setTeamLoading(false)
     }
-  }, [teamDepartment, teamPage, teamStatus])
+  }, [teamAssignee, teamDepartment, teamMonth, teamPage, teamStatus])
 
   useEffect(() => {
     Promise.resolve().then(loadDashboard)
@@ -224,12 +229,46 @@ export default function UserDashboardPage() {
                     aria-label="Lọc theo phòng ban người thực hiện"
                     onChange={(value) => {
                       setTeamDepartment(value)
+                      setTeamAssignee(undefined)
                       setTeamPage(1)
                     }}
                     options={(teamOverview.departments || []).map((department) => ({
                       value: department.id,
                       label: department.name,
                     }))}
+                  />
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    value={teamAssignee}
+                    placeholder="Tất cả nhân viên"
+                    aria-label="Lọc theo tên nhân viên"
+                    onChange={(value) => {
+                      setTeamAssignee(value)
+                      setTeamPage(1)
+                    }}
+                    options={(teamOverview.assignees || [])
+                      .filter((employee) => (
+                        !teamDepartment
+                        || employee.department_id === teamDepartment
+                      ))
+                      .map((employee) => ({
+                        value: employee.id,
+                        label: `${employee.full_name} · ${employee.department_name}`,
+                      }))}
+                  />
+                  <DatePicker
+                    picker="month"
+                    allowClear
+                    value={teamMonth}
+                    format="MM/YYYY"
+                    placeholder="Tất cả các tháng"
+                    aria-label="Lọc theo tháng giao việc"
+                    onChange={(value) => {
+                      setTeamMonth(value)
+                      setTeamPage(1)
+                    }}
                   />
                 </div>
               )}

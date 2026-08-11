@@ -3,22 +3,39 @@ import {
   App,
   Avatar,
   Button,
+  Drawer,
   Empty,
   Form,
   Input,
   Modal,
+  Pagination,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiHelpCircle, FiSearch, FiUser, FiUserPlus, FiUsers } from 'react-icons/fi'
+import {
+  FiArrowRight,
+  FiBriefcase,
+  FiHelpCircle,
+  FiSearch,
+  FiUser,
+  FiUserPlus,
+  FiUsers,
+} from 'react-icons/fi'
 import { useNavigate } from 'react-router'
 import { getPositionsApi } from '../../api/positionApi'
+import { getTeamTaskOverviewApi } from '../../api/taskApi'
 import { createUserApi, getUsersApi } from '../../api/userApi'
 import { useAuth } from '../../contexts/useAuth'
+import {
+  formatDateTime,
+  getPriorityLabel,
+  getStatusLabel,
+} from '../../utils/task'
 import styles from './UserTeamPage.module.css'
 
 export default function UserTeamPage() {
@@ -36,6 +53,10 @@ export default function UserTeamPage() {
   const [positionFilter, setPositionFilter] = useState()
   const [relationshipFilter, setRelationshipFilter] = useState()
   const [statusFilter, setStatusFilter] = useState()
+  const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [employeeWork, setEmployeeWork] = useState(null)
+  const [employeeWorkLoading, setEmployeeWorkLoading] = useState(false)
+  const [employeeWorkPage, setEmployeeWorkPage] = useState(1)
 
   const loadData = useCallback(async () => {
     if (!departmentId) {
@@ -63,6 +84,34 @@ export default function UserTeamPage() {
   useEffect(() => {
     Promise.resolve().then(loadData)
   }, [loadData])
+
+  const loadEmployeeWork = useCallback(async () => {
+    if (!selectedEmployee) return
+
+    setEmployeeWorkLoading(true)
+    try {
+      const response = await getTeamTaskOverviewApi({
+        status: 'ACTIVE',
+        assignee_id: selectedEmployee.id,
+        page: employeeWorkPage,
+      })
+      setEmployeeWork(response.data)
+      if (response.data.page && response.data.page !== employeeWorkPage) {
+        setEmployeeWorkPage(response.data.page)
+      }
+    } catch (error) {
+      message.error(
+        error.response?.data?.message
+        || 'Không thể tải công việc của nhân viên này.',
+      )
+    } finally {
+      setEmployeeWorkLoading(false)
+    }
+  }, [employeeWorkPage, message, selectedEmployee])
+
+  useEffect(() => {
+    Promise.resolve().then(loadEmployeeWork)
+  }, [loadEmployeeWork])
 
   const positionMap = useMemo(
     () => new Map(positions.map((position) => [position.id, position])),
@@ -119,6 +168,12 @@ export default function UserTeamPage() {
   const showCreate = () => {
     form.resetFields()
     setOpen(true)
+  }
+
+  const showEmployeeWork = (employee) => {
+    setEmployeeWork(null)
+    setEmployeeWorkPage(1)
+    setSelectedEmployee(employee)
   }
 
   const submit = async () => {
@@ -311,6 +366,19 @@ export default function UserTeamPage() {
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: false }}
           scroll={{ x: 900 }}
+          onRow={(employee) => ({
+            className: styles.clickableRow,
+            tabIndex: 0,
+            role: 'button',
+            'aria-label': `Xem công việc đang thực hiện của ${employee.full_name}`,
+            onClick: () => showEmployeeWork(employee),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                showEmployeeWork(employee)
+              }
+            },
+          })}
           locale={{
             emptyText: (
               <Empty description="Không có nhân sự cấp dưới phù hợp" />
@@ -318,6 +386,72 @@ export default function UserTeamPage() {
           }}
         />
       </section>
+
+      <Drawer
+        open={Boolean(selectedEmployee)}
+        onClose={() => setSelectedEmployee(null)}
+        size={560}
+        className={styles.workDrawer}
+        title={(
+          <div className={styles.drawerTitle}>
+            <Avatar icon={<FiUser />} className={styles.avatar} />
+            <div>
+              <strong>{selectedEmployee?.full_name}</strong>
+              <span>Công việc đang xử lý</span>
+            </div>
+          </div>
+        )}
+      >
+        <div className={styles.workSummary}>
+          <FiBriefcase />
+          <span>Task và Subtask chưa hoàn tất</span>
+          <strong>{employeeWork?.total || 0}</strong>
+        </div>
+
+        {employeeWorkLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} />
+        ) : (employeeWork?.tasks || []).length === 0 ? (
+          <Empty description="Nhân viên hiện không có công việc đang xử lý" />
+        ) : (
+          <div className={styles.workList}>
+            {employeeWork.tasks.map((task) => (
+              <button
+                type="button"
+                key={task.id}
+                className={styles.workItem}
+                onClick={() => navigate(`/app/tasks/${task.id}`)}
+              >
+                <span className={styles.workItemTop}>
+                  <Tag color={task.work_type === 'SUBTASK' ? 'blue' : 'green'}>
+                    {task.work_type === 'SUBTASK' ? 'Subtask' : 'Task'}
+                  </Tag>
+                  <Tag>{getStatusLabel(task.status)}</Tag>
+                </span>
+                <strong>{task.title}</strong>
+                <span>
+                  {getPriorityLabel(task.priority)} · Hạn {formatDateTime(task.due_date)}
+                </span>
+                {task.parent_task_title && (
+                  <small>Thuộc: {task.parent_task_title}</small>
+                )}
+                <FiArrowRight />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {(employeeWork?.total || 0) > (employeeWork?.per_page || 6) && (
+          <div className={styles.workPagination}>
+            <Pagination
+              current={employeeWorkPage}
+              pageSize={employeeWork?.per_page || 6}
+              total={employeeWork?.total || 0}
+              showSizeChanger={false}
+              onChange={setEmployeeWorkPage}
+            />
+          </div>
+        )}
+      </Drawer>
 
       <Modal
         title="Thêm nhân sự cấp dưới"

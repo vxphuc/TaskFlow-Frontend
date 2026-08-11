@@ -11,6 +11,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "capture:showcase": "node e2e/capture-showcase.mjs",
     "test:e2e": "node e2e/run-e2e.mjs",
     "test:e2e:headed": "node e2e/run-e2e.mjs --headed"
   },

@@ -24,8 +24,8 @@
 .sectionHeading h2, .performance h2 { margin: 0 0 4px; font-size: 18px; }
 .sectionHeading button { display: inline-flex; align-items: center; gap: 6px; padding-right: 0; color: #206a37; }
 .taskCount { display: inline-flex; align-items: center; gap: 6px; color: #42604b; font-size: 13px; font-weight: 700; white-space: nowrap; }
-.teamFilters { display: grid; grid-template-columns: minmax(180px, 220px) minmax(200px, 280px); gap: 10px; margin-top: 18px; padding: 14px; border: 1px solid #e3e9e5; background: #f8faf8; }
-.teamFilters :global(.ant-select) { width: 100%; }
+.teamFilters { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 10px; margin-top: 18px; padding: 14px; border: 1px solid #e3e9e5; background: #f8faf8; }
+.teamFilters :global(.ant-select), .teamFilters :global(.ant-picker) { width: 100%; }
 .taskList { display: grid; margin-top: 17px; border-top: 1px solid #e7ece8; }
 .taskRow { min-height: 86px; display: grid; grid-template-columns: 8px minmax(0,1fr) auto 18px; align-items: center; gap: 13px; padding: 11px 4px; border: 0; border-bottom: 1px solid #e7ece8; color: #26372c; background: #fff; cursor: pointer; text-align: left; }
 .taskRow:hover { background: #f8fbf9; }
