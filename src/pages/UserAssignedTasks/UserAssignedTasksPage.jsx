@@ -125,7 +125,7 @@ export default function UserAssignedTasksPage() {
         </div>
       </section>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} />}
       {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : visibleTasks.length === 0 ? (
         <section className={styles.empty}><Empty description="Không có công việc phù hợp" /></section>
       ) : (
@@ -147,13 +147,13 @@ export default function UserAssignedTasksPage() {
                   <small className={styles.meta}>
                     {task.item_kind === 'SUBTASK' ? (
                       <>
-                        <Tag color="blue" bordered={false}>Subtask</Tag>
+                        <Tag color="blue" variant="filled">Subtask</Tag>
                         <FiCornerDownRight />
                         {task.parent_task_title || 'Task chính'}
                       </>
                     ) : (
                       <>
-                        <Tag color="green" bordered={false}>Task chính</Tag>
+                        <Tag color="green" variant="filled">Task chính</Tag>
                         {getPriorityLabel(task.priority)}
                       </>
                     )}

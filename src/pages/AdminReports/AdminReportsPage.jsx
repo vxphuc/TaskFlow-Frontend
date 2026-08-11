@@ -1,5 +1,6 @@
 import {
   Alert,
+  App,
   Button,
   DatePicker,
   Descriptions,
@@ -14,7 +15,6 @@ import {
   Tabs,
   Tag,
   Tooltip,
-  message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
@@ -65,6 +65,7 @@ function StatusTag({ status }) {
 }
 
 export default function AdminReportsPage() {
+  const { message } = App.useApp()
   const [mode, setMode] = useState('department')
   const [departments, setDepartments] = useState([])
   const [users, setUsers] = useState([])
@@ -321,7 +322,7 @@ export default function AdminReportsPage() {
         <Button type="primary" icon={<FiRefreshCw />} onClick={loadReport}>Xem báo cáo</Button>
       </section>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} />}
       {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : report ? (
         <>
           <section className={styles.statGrid}>
@@ -352,7 +353,7 @@ export default function AdminReportsPage() {
         </>
       ) : <Empty className={styles.emptyReport} description="Chọn điều kiện và xem báo cáo" />}
 
-      <Drawer title="Chi tiết kiểm tra công việc" width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+      <Drawer title="Chi tiết kiểm tra công việc" size={760} open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         {auditLoading ? <div className={styles.drawerLoading}><Spin /></div> : audit ? <Tabs items={auditTabs} /> : <Empty description="Không tải được dữ liệu task" />}
       </Drawer>
     </div>

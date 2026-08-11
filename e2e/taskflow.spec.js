@@ -1,0 +1,159 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { expect, test } from '@playwright/test'
+
+
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
+const resultFile = path.join(currentDirectory, 'fixtures', 'result.txt')
+const password = 'TaskFlow@123'
+
+async function login(page, phone) {
+  await page.goto('/')
+  await page.getByLabel('Số điện thoại').fill(phone)
+  await page.getByLabel('Mật khẩu').fill(password)
+  await page.getByRole('button', { name: 'Đăng nhập' }).click()
+  await expect(page).toHaveURL(/\/(admin|app)$/)
+}
+
+function watchRuntimeErrors(page) {
+  const errors = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text())
+  })
+  return errors
+}
+
+async function expectHealthyPage(page, heading) {
+  await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+  await expect(page.getByText('Không thể tải màn hình này')).toHaveCount(0)
+}
+
+test.describe.serial('TaskFlow end-to-end', () => {
+  test('admin can sign in and open every administration screen', async ({ page }) => {
+    const runtimeErrors = watchRuntimeErrors(page)
+    await login(page, '0900000000')
+    await expect(page).toHaveURL(/\/admin$/)
+
+    const screens = [
+      ['/admin', 'Hoạt động hệ thống'],
+      ['/admin/departments', 'Phòng ban'],
+      ['/admin/positions', 'Cấp bậc phòng ban'],
+      ['/admin/users', 'Nhân sự'],
+      ['/admin/reports', 'Hiệu suất công việc'],
+      ['/admin/recurring', 'Task định kỳ'],
+    ]
+
+    for (const [url, heading] of screens) {
+      await page.goto(url)
+      await expectHealthyPage(page, heading)
+    }
+
+    expect(runtimeErrors).toEqual([])
+  })
+
+  test('manager screens work on desktop and the dashboard works on mobile', async ({ browser }) => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    const runtimeErrors = watchRuntimeErrors(page)
+    await login(page, '0900000001')
+    await expect(page).toHaveURL(/\/app$/)
+
+    const screens = [
+      ['/app', 'Chào Quan ly E2E'],
+      ['/app/assigned', 'Việc được giao'],
+      ['/app/created', 'Việc tôi giao'],
+      ['/app/personal', 'Việc cá nhân'],
+      ['/app/team', 'Nhân sự cấp dưới'],
+      ['/app/recurring', 'Task định kỳ'],
+      ['/app/initiatives', 'Sáng kiến và ý tưởng mới'],
+      ['/app/reports', 'Hiệu suất theo tháng'],
+      ['/app/guide', 'Sử dụng TaskFlow từ A đến Z'],
+    ]
+
+    for (const [url, heading] of screens) {
+      await page.goto(url)
+      await expectHealthyPage(page, heading)
+    }
+
+    expect(runtimeErrors).toEqual([])
+    await context.close()
+
+    const mobileContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+    })
+    const mobilePage = await mobileContext.newPage()
+    await login(mobilePage, '0900000001')
+    await expectHealthyPage(mobilePage, 'Chào Quan ly E2E')
+    await expect(mobilePage.getByRole('button', { name: 'Mở menu' })).toBeVisible()
+    await mobileContext.close()
+  })
+
+  test('task lifecycle, attachment and realtime synchronization work', async ({ browser }) => {
+    const managerContext = await browser.newContext()
+    const staffContext = await browser.newContext()
+    const managerPage = await managerContext.newPage()
+    const staffPage = await staffContext.newPage()
+    const managerErrors = watchRuntimeErrors(managerPage)
+    const staffErrors = watchRuntimeErrors(staffPage)
+
+    await Promise.all([
+      login(managerPage, '0900000001'),
+      login(staffPage, '0900000002'),
+    ])
+    await staffPage.goto('/app/assigned')
+    await expectHealthyPage(staffPage, 'Việc được giao')
+
+    await managerPage.goto('/app/created')
+    await managerPage.getByRole('button', { name: 'Giao công việc' }).click()
+    await managerPage.getByLabel('Tiêu đề').fill('Task E2E realtime')
+    await managerPage.getByLabel('Mô tả').fill('Kiểm tra vòng đời task qua trình duyệt.')
+    await managerPage.getByLabel('Người thực hiện').click()
+    await managerPage.getByText(/Nhan vien E2E/).last().click()
+    await managerPage.getByRole('button', { name: 'Giao task' }).click()
+
+    await expect(managerPage.getByRole('heading', { name: 'Task E2E realtime' })).toBeVisible()
+    await expect(staffPage.getByText('Task E2E realtime')).toBeVisible()
+
+    await staffPage.getByText('Task E2E realtime').click()
+    await staffPage.getByRole('button', { name: 'Bắt đầu' }).click()
+    await expect(staffPage.getByRole('button', { name: 'Gửi kết quả' })).toBeVisible()
+
+    await managerPage.getByRole('tab', { name: /Trao đổi/ }).click()
+    await staffPage.getByRole('tab', { name: /Trao đổi/ }).click()
+    const commentInput = staffPage.getByPlaceholder(/Trao đổi về yêu cầu/)
+    await commentInput.fill('Trao đổi realtime từ nhân viên E2E')
+    await commentInput.press('Enter')
+    await expect(managerPage.getByText('Trao đổi realtime từ nhân viên E2E')).toBeVisible()
+
+    await staffPage.getByRole('button', { name: 'Gửi kết quả' }).click()
+    const submitDialog = staffPage.getByRole('dialog', { name: 'Gửi kết quả công việc' })
+    await submitDialog.locator('textarea').fill('Kết quả hoàn thành qua E2E.')
+    await submitDialog.locator('input[type="file"]').setInputFiles(resultFile)
+    await submitDialog.getByRole('button', { name: 'Xác nhận' }).click()
+
+    await expect(managerPage.getByRole('button', { name: 'Bắt đầu duyệt' })).toBeVisible()
+    await managerPage.getByRole('button', { name: 'Bắt đầu duyệt' }).click()
+    await expect(managerPage.getByRole('button', { name: 'Duyệt hoàn thành' })).toBeVisible()
+    await managerPage.getByRole('button', { name: 'Duyệt hoàn thành' }).click()
+    const approveDialog = managerPage.getByRole('dialog', { name: 'Duyệt hoàn thành' })
+    await approveDialog.locator('textarea').fill('Kết quả E2E đạt yêu cầu.')
+    await approveDialog.getByRole('button', { name: 'Xác nhận' }).click()
+
+    await expect(staffPage.getByText('Hoàn thành', { exact: true }).first()).toBeVisible()
+    await staffPage.getByRole('tab', { name: /Kết quả/ }).click()
+    await expect(staffPage.getByText('result.txt')).toBeVisible()
+
+    await managerPage.goto('/app/reports')
+    const downloadPromise = managerPage.waitForEvent('download')
+    await managerPage.getByRole('button', { name: /Xuất Excel/ }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toMatch(/\.xlsx$/)
+
+    expect(managerErrors).toEqual([])
+    expect(staffErrors).toEqual([])
+    await managerContext.close()
+    await staffContext.close()
+  })
+})

@@ -1,5 +1,6 @@
 import {
   Alert,
+  App,
   Button,
   DatePicker,
   Empty,
@@ -9,7 +10,6 @@ import {
   Select,
   Skeleton,
   Tabs,
-  message,
 } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -42,6 +42,7 @@ import styles from './UserPersonalTasksPage.module.css'
 const reviewStatuses = new Set(['SUBMITTED', 'REVIEWING'])
 
 export default function UserPersonalTasksPage() {
+  const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [personalTasks, setPersonalTasks] = useState(null)
@@ -222,7 +223,7 @@ export default function UserPersonalTasksPage() {
           type="error"
           showIcon
           closable
-          message={error}
+          title={error}
           className={styles.alert}
           onClose={() => setError('')}
         />

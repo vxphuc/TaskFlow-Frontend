@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
         <Button type="primary" icon={<FiUsers />} onClick={() => navigate('/admin/users')}>Thêm nhân sự</Button>
       </header>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} />}
       {!data ? <Skeleton active paragraph={{ rows: 6 }} /> : (
         <>
           <section className={styles.statGrid}>

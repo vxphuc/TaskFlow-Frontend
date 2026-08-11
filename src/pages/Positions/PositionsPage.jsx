@@ -1,11 +1,12 @@
-import { Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag, message } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { App, Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from 'antd'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiPlus, FiPower } from 'react-icons/fi'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { createPositionApi, getPositionsApi, setPositionActiveApi, updatePositionApi } from '../../api/positionApi'
 import styles from './PositionsPage.module.css'
 
 export default function PositionsPage() {
+  const { message } = App.useApp()
   const [form] = Form.useForm()
   const [departments, setDepartments] = useState([])
   const [departmentId, setDepartmentId] = useState()
@@ -17,7 +18,7 @@ export default function PositionsPage() {
 
   const selectedDepartment = departments.find((item) => item.id === departmentId)
 
-  const loadPositions = async (id) => {
+  const loadPositions = useCallback(async (id) => {
     if (!id) { setPositions([]); setLoading(false); return }
     setLoading(true)
     try {
@@ -26,7 +27,7 @@ export default function PositionsPage() {
     } catch (err) {
       message.error(err.response?.data?.message || 'Không thể tải danh sách cấp bậc.')
     } finally { setLoading(false) }
-  }
+  }, [message])
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -43,7 +44,7 @@ export default function PositionsPage() {
       }
     }
     loadDepartments()
-  }, [])
+  }, [loadPositions, message])
 
   const changeDepartment = (value) => {
     setDepartmentId(value)

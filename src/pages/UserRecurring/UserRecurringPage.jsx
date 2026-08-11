@@ -1,4 +1,5 @@
 import {
+  App,
   Button,
   DatePicker,
   Drawer,
@@ -13,7 +14,6 @@ import {
   Table,
   Tag,
   Tooltip,
-  message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -69,6 +69,7 @@ const scheduleLabel = (template) => {
 }
 
 export default function UserRecurringPage() {
+  const { message } = App.useApp()
   const { user } = useAuth()
   const [templateForm] = Form.useForm()
   const [generateForm] = Form.useForm()
@@ -117,7 +118,7 @@ export default function UserRecurringPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [message])
 
   useEffect(() => {
     Promise.resolve().then(loadPage)
@@ -574,7 +575,7 @@ export default function UserRecurringPage() {
 
       <Drawer
         title="Công việc đã sinh"
-        width={760}
+        size={760}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >

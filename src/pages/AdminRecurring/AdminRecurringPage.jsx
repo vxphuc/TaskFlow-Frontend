@@ -1,4 +1,4 @@
-import { Button, Drawer, Empty, Input, Select, Table, Tag, message } from 'antd'
+import { App, Button, Drawer, Empty, Input, Select, Table, Tag } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { FiCalendar, FiEye, FiSearch } from 'react-icons/fi'
@@ -50,6 +50,7 @@ const scheduleLabel = (template) => {
 }
 
 export default function AdminRecurringPage() {
+  const { message } = App.useApp()
   const [templates, setTemplates] = useState([])
   const [departments, setDepartments] = useState([])
   const [users, setUsers] = useState([])
@@ -71,7 +72,7 @@ export default function AdminRecurringPage() {
       })
       .catch((err) => message.error(err.response?.data?.message || 'Không thể tải danh sách task định kỳ.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [message])
 
   const departmentsById = useMemo(
     () => Object.fromEntries(departments.map((item) => [item.id, item])),
@@ -141,7 +142,7 @@ export default function AdminRecurringPage() {
         <Table rowKey="id" columns={columns} dataSource={filteredTemplates} loading={loading} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ x: 1250 }} locale={{ emptyText: <Empty description="Chưa có mẫu task định kỳ" /> }} />
       </section>
 
-      <Drawer title="Công việc đã sinh" width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+      <Drawer title="Công việc đã sinh" size={760} open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         {selectedTemplate && (
           <div className={styles.drawerHeader}>
             <span><FiCalendar /></span>

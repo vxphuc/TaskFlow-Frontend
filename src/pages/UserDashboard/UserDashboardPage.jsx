@@ -162,7 +162,7 @@ export default function UserDashboardPage() {
         </Space>
       </header>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} />}
       {!data ? <Skeleton active paragraph={{ rows: 8 }} /> : (
         <>
           <section className={styles.statGrid}>
@@ -312,7 +312,7 @@ export default function UserDashboardPage() {
                 type="dashboard"
                 percent={completionRate}
                 strokeColor="#206a37"
-                trailColor="#e4ebe6"
+                railColor="#e4ebe6"
                 size={156}
               />
               <strong>Tỷ lệ hoàn thành</strong>

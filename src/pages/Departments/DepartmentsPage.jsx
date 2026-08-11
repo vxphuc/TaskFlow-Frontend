@@ -1,4 +1,4 @@
-import { Button, Empty, Form, Input, Modal, Popconfirm, Space, Table, Tag, message } from 'antd'
+import { App, Button, Empty, Form, Input, Modal, Popconfirm, Space, Table, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiPlus, FiPower, FiSearch } from 'react-icons/fi'
 import {
@@ -10,6 +10,7 @@ import {
 import styles from './DepartmentsPage.module.css'
 
 export default function DepartmentsPage() {
+  const { message } = App.useApp()
   const [form] = Form.useForm()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +36,7 @@ export default function DepartmentsPage() {
       .then((response) => setItems(response.data.departments || []))
       .catch((err) => message.error(err.response?.data?.message || 'Không thể tải danh sách phòng ban.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [message])
 
   const filteredItems = useMemo(() => {
     const keyword = search.trim().toLocaleLowerCase('vi')

@@ -1,5 +1,6 @@
 import {
   Alert,
+  App,
   Button,
   DatePicker,
   Drawer,
@@ -13,7 +14,6 @@ import {
   Space,
   Tag,
   Tooltip,
-  message,
 } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -45,6 +45,7 @@ const statusMeta = {
 }
 
 export default function InitiativesPage() {
+  const { message } = App.useApp()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [createForm] = Form.useForm()
@@ -219,7 +220,7 @@ export default function InitiativesPage() {
           type="error"
           showIcon
           closable
-          message={error}
+          title={error}
           onClose={() => setError('')}
           className={styles.alert}
         />
@@ -229,7 +230,7 @@ export default function InitiativesPage() {
         <Alert
           type="warning"
           showIcon
-          message="Bạn chưa có quản lý trực tiếp"
+          title="Bạn chưa có quản lý trực tiếp"
           description="Liên hệ quản trị viên để cập nhật người quản lý trước khi gửi sáng kiến."
           className={styles.alert}
         />
@@ -341,7 +342,7 @@ export default function InitiativesPage() {
           <Alert
             type="info"
             showIcon
-            message={`Người nhận: ${manager?.full_name || 'Chưa xác định'}`}
+            title={`Người nhận: ${manager?.full_name || 'Chưa xác định'}`}
             className={styles.formAlert}
           />
           <Form.Item
@@ -401,7 +402,7 @@ export default function InitiativesPage() {
         title="Chi tiết sáng kiến"
         open={Boolean(selected)}
         onClose={closeDetail}
-        width="min(560px, 100vw)"
+        size="min(560px, 100vw)"
       >
         {selected && (
           <div className={styles.detail}>

@@ -46,7 +46,7 @@ export default function LoginPage() {
         </div>
         <div className={styles.formWrap}>
           <header><span>CHÀO MỪNG TRỞ LẠI</span><h2>Đăng nhập hệ thống</h2><p>Sử dụng tài khoản được doanh nghiệp cấp cho bạn.</p></header>
-          {error && <Alert className={styles.alert} type="error" message={error} showIcon closable onClose={() => setError('')} />}
+          {error && <Alert className={styles.alert} type="error" title={error} showIcon closable onClose={() => setError('')} />}
           <Form layout="vertical" size="large" onFinish={onFinish} requiredMark={false}>
             <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }]}>
               <Input prefix={<FiPhone />} placeholder="Nhập số điện thoại" autoComplete="tel" inputMode="tel" />

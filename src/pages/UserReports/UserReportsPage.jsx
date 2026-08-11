@@ -1,4 +1,4 @@
-import { Alert, Button, DatePicker, Empty, Pagination, Progress, Segmented, Select, Skeleton, message } from 'antd'
+import { Alert, App, Button, DatePicker, Empty, Pagination, Progress, Segmented, Select, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -29,6 +29,7 @@ const views = [
 const ASSIGNEES_PER_PAGE = 6
 
 export default function UserReportsPage() {
+  const { message } = App.useApp()
   const navigate = useNavigate()
   const [month, setMonth] = useState(dayjs())
   const [view, setView] = useState('assignee')
@@ -207,7 +208,7 @@ export default function UserReportsPage() {
         />
       </div>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} />}
       {!report ? !error && <Skeleton active paragraph={{ rows: 9 }} /> : (
         <>
           <section className={styles.statGrid}>
@@ -255,11 +256,11 @@ export default function UserReportsPage() {
           <div className={styles.metricsGrid}>
             <section className={styles.rates}>
               <div>
-                <Progress type="dashboard" size={140} percent={summary.completion_rate || 0} strokeColor="#206a37" trailColor="#e4ebe6" />
+                <Progress type="dashboard" size={140} percent={summary.completion_rate || 0} strokeColor="#206a37" railColor="#e4ebe6" />
                 <strong>Tỷ lệ hoàn thành</strong>
               </div>
               <div>
-                <Progress type="dashboard" size={140} percent={summary.on_time_rate || 0} strokeColor="#3977a8" trailColor="#e6ebef" />
+                <Progress type="dashboard" size={140} percent={summary.on_time_rate || 0} strokeColor="#3977a8" railColor="#e6ebef" />
                 <strong>Hoàn thành đúng hạn</strong>
               </div>
             </section>

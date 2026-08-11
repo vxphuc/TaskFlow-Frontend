@@ -1,5 +1,6 @@
 import {
   Alert,
+  App,
   Avatar,
   Button,
   Checkbox,
@@ -17,7 +18,6 @@ import {
   Timeline,
   Tooltip,
   Upload,
-  message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -123,6 +123,7 @@ const formatFileSize = (value) => {
 }
 
 export default function UserTaskDetailPage() {
+  const { message } = App.useApp()
   const { taskId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -132,6 +133,7 @@ export default function UserTaskDetailPage() {
   const [actionForm] = Form.useForm()
   const commentListRef = useRef(null)
   const previousCommentCountRef = useRef(0)
+  const assigneesLoadedForTaskRef = useRef(null)
   const [task, setTask] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [comments, setComments] = useState([])
@@ -355,8 +357,11 @@ export default function UserTaskDetailPage() {
       !task
       || task.parent_task_id
       || ![task.assigned_to, task.created_by].includes(user.id)
+      || !isTaskOpen(task.status)
+      || assigneesLoadedForTaskRef.current === taskId
     ) return
 
+    assigneesLoadedForTaskRef.current = taskId
     Promise.resolve()
       .then(() => getSubtaskAssigneesApi(taskId))
       .then((response) => {
@@ -364,6 +369,7 @@ export default function UserTaskDetailPage() {
         setAssigneeDepartments(response.data.departments || [])
       })
       .catch(() => {
+        assigneesLoadedForTaskRef.current = null
         setAssignees([])
         setAssigneeDepartments([])
       })
@@ -811,7 +817,7 @@ export default function UserTaskDetailPage() {
       <button type="button" className={styles.back} onClick={() => navigate(-1)}>
         <FiArrowLeft /> Quay lại danh sách
       </button>
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} closable onClose={() => setError('')} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} closable onClose={() => setError('')} />}
       {!task ? <Empty description="Không tìm thấy công việc" /> : (
         <>
           <header className={styles.hero}>
@@ -939,7 +945,7 @@ export default function UserTaskDetailPage() {
                         percent={checklistProgress.percentage}
                         showInfo={false}
                         strokeColor="#206a37"
-                        trailColor="#e6ece8"
+                        railColor="#e6ece8"
                       />
 
                       {checklistPermissions.can_add && (

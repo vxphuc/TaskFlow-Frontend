@@ -1,12 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ConfigProvider } from 'antd'
+import { App as AntApp, ConfigProvider } from 'antd'
 import viVN from 'antd/locale/vi_VN'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary/AppErrorBoundary.jsx'
 import './index.css'
-import App from './App.jsx'
+import TaskFlowApp from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -21,13 +21,15 @@ createRoot(document.getElementById('root')).render(
         },
       }}
     >
-      <BrowserRouter>
-        <AppErrorBoundary>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </AppErrorBoundary>
-      </BrowserRouter>
+      <AntApp>
+        <BrowserRouter>
+          <AppErrorBoundary>
+            <AuthProvider>
+              <TaskFlowApp />
+            </AuthProvider>
+          </AppErrorBoundary>
+        </BrowserRouter>
+      </AntApp>
     </ConfigProvider>
   </StrictMode>,
 )

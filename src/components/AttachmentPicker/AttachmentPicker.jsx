@@ -1,4 +1,4 @@
-import { Button, Upload, message } from 'antd'
+import { App, Button, Upload } from 'antd'
 import { useEffect, useRef } from 'react'
 import { FiPaperclip } from 'react-icons/fi'
 import styles from './AttachmentPicker.module.css'
@@ -26,6 +26,7 @@ const getExtension = (fileName = '') =>
   fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : ''
 
 export default function AttachmentPicker({ files, onChange, disabled = false }) {
+  const { message } = App.useApp()
   const filesRef = useRef(files)
 
   useEffect(() => {

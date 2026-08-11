@@ -1,5 +1,6 @@
 import {
   Alert,
+  App,
   Avatar,
   Button,
   Empty,
@@ -10,7 +11,6 @@ import {
   Space,
   Table,
   Tag,
-  message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -22,6 +22,7 @@ import { useAuth } from '../../contexts/useAuth'
 import styles from './UserTeamPage.module.css'
 
 export default function UserTeamPage() {
+  const { message } = App.useApp()
   const { user } = useAuth()
   const navigate = useNavigate()
   const departmentId = user?.department_id
@@ -57,7 +58,7 @@ export default function UserTeamPage() {
     } finally {
       setLoading(false)
     }
-  }, [departmentId])
+  }, [departmentId, message])
 
   useEffect(() => {
     Promise.resolve().then(loadData)
@@ -245,7 +246,7 @@ export default function UserTeamPage() {
           className={styles.alert}
           type="warning"
           showIcon
-          message="Tài khoản chưa được thiết lập đầy đủ phòng ban và cấp bậc."
+          title="Tài khoản chưa được thiết lập đầy đủ phòng ban và cấp bậc."
         />
       )}
 

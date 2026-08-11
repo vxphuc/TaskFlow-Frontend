@@ -111,7 +111,7 @@ export default function AdminLayout() {
             menu={{ items: accountItems }}
             trigger={['click']}
             placement="bottomRight"
-            overlayClassName={styles.accountDropdown}
+            classNames={{ root: styles.accountDropdown }}
           >
             <button className={styles.account} type="button">
               <Avatar className={styles.avatar}>{user.full_name?.charAt(0)}</Avatar>
@@ -131,7 +131,7 @@ export default function AdminLayout() {
       <Drawer
         className={styles.mobileDrawer}
         placement="left"
-        width={280}
+        size={280}
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         closable={false}

@@ -258,7 +258,7 @@ export default function UserLayout() {
       <Drawer
         className={styles.mobileDrawer}
         placement="left"
-        width={280}
+        size={280}
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         closable={false}
@@ -271,7 +271,7 @@ export default function UserLayout() {
       <Drawer
         title="Thông báo"
         placement="right"
-        width={400}
+        size={400}
         open={notificationOpen}
         onClose={() => setNotificationOpen(false)}
         extra={unreadCount > 0 && <Button type="link" onClick={markAllRead}>Đọc tất cả</Button>}

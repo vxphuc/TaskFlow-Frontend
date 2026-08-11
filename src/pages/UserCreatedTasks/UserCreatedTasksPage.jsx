@@ -1,4 +1,4 @@
-import { Alert, Button, DatePicker, Empty, Form, Input, Modal, Pagination, Select, Skeleton, Space, Switch, message } from 'antd'
+import { Alert, App, Button, DatePicker, Empty, Form, Input, Modal, Pagination, Select, Skeleton, Space, Switch } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
@@ -31,6 +31,7 @@ const quickViewOptions = [
 ]
 
 export default function UserCreatedTasksPage() {
+  const { message } = App.useApp()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -276,7 +277,7 @@ export default function UserCreatedTasksPage() {
         </div>
       </section>
 
-      {error && <Alert type="error" showIcon message={error} className={styles.alert} closable onClose={() => setError('')} />}
+      {error && <Alert type="error" showIcon title={error} className={styles.alert} closable onClose={() => setError('')} />}
       {!tasks ? <Skeleton active paragraph={{ rows: 8 }} /> : tasks.length === 0 && createdSubtasks.length === 0 ? (
         <section className={styles.empty}>
           <Empty description="Bạn chưa giao công việc nào">

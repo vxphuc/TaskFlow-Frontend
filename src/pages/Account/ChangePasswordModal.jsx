@@ -1,9 +1,10 @@
-import { Button, Form, Input, Modal, message } from 'antd'
+import { App, Button, Form, Input, Modal } from 'antd'
 import { useState } from 'react'
 import { changeOwnPasswordApi } from '../../api/authApi'
 import styles from './ChangePasswordModal.module.css'
 
 export default function ChangePasswordModal({ open, onClose }) {
+  const { message } = App.useApp()
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
 

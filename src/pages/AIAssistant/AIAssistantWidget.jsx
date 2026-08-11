@@ -286,8 +286,8 @@ export default function AIAssistantWidget() {
           )}
 
           <div className={styles.content}>
-            {error && <Alert className={styles.alert} type="error" showIcon closable message={error} onClose={() => setError('')} />}
-            {status && !status.enabled && <Alert className={styles.alert} type="warning" showIcon message="Trợ lý AI đang tạm tắt." />}
+            {error && <Alert className={styles.alert} type="error" showIcon closable title={error} onClose={() => setError('')} />}
+            {status && !status.enabled && <Alert className={styles.alert} type="warning" showIcon title="Trợ lý AI đang tạm tắt." />}
 
             {loading || conversationLoading ? (
               <div className={styles.center}><Spin /></div>

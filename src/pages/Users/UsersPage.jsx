@@ -1,4 +1,4 @@
-import { Avatar, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, message } from 'antd'
+import { App, Avatar, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiKey, FiPlus, FiPower, FiSearch, FiUser } from 'react-icons/fi'
 import { getDepartmentsApi } from '../../api/departmentApi'
@@ -7,6 +7,7 @@ import { changeUserPasswordApi, createUserApi, getUsersApi, setUserActiveApi, up
 import styles from './UsersPage.module.css'
 
 export default function UsersPage() {
+  const { message } = App.useApp()
   const [form] = Form.useForm()
   const [passwordForm] = Form.useForm()
   const [users, setUsers] = useState([])
@@ -70,7 +71,7 @@ export default function UsersPage() {
       })
       .catch((err) => message.error(err.response?.data?.message || 'Không thể tải danh sách nhân sự.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [message])
 
   const managerOptions = users
     .filter((user) => {

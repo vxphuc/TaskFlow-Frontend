@@ -68,7 +68,7 @@ function ProgressNode({ node, isRoot, onOpenTask }) {
             percent={node.progress.percentage}
             showInfo={false}
             strokeColor={node.status === 'CANCELLED' ? '#9b3434' : '#206a37'}
-            trailColor="#e6ece8"
+            railColor="#e6ece8"
           />
         </div>
 
@@ -135,7 +135,7 @@ export default function TaskProgressTree({ data, loading, onOpenTask }) {
         percent={summary.percentage}
         showInfo={false}
         strokeColor="#206a37"
-        trailColor="#e3e9e5"
+        railColor="#e3e9e5"
         size={["100%", 12]}
       />
 
