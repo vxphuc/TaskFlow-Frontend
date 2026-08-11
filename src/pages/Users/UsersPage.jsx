@@ -187,7 +187,7 @@ export default function UsersPage() {
             <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true, message: 'Nhập số điện thoại.' }]}><Input placeholder="0901234567" /></Form.Item>
           </div>
           <div className={styles.formGrid}>
-            <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}><Select options={[{ value: 'USER', label: 'Nhân viên' }, { value: 'SYSTEM_ADMIN', label: 'Quản trị hệ thống' }]} /></Form.Item>
+            <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}><Select options={[{ value: 'USER', label: 'Nhân viên' }, { value: 'SYSTEM_ADMIN', label: 'Quản trị công ty' }]} /></Form.Item>
             {!editing && <Form.Item name="password" label="Mật khẩu ban đầu" rules={[{ required: true, message: 'Nhập mật khẩu.' }, { min: 6, message: 'Ít nhất 6 ký tự.' }]}><Input.Password placeholder="Tối thiểu 6 ký tự" /></Form.Item>}
           </div>
           {selectedRole === 'USER' && (

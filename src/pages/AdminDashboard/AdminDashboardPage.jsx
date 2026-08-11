@@ -38,7 +38,7 @@ export default function AdminDashboardPage() {
         { label: 'Phòng ban', value: data.departments.length, note: `${data.departments.filter((item) => item.is_active).length} đang hoạt động`, icon: <FiBriefcase /> },
         { label: 'Nhân sự', value: data.users.filter((item) => item.role === 'USER').length, note: `${data.users.filter((item) => item.role === 'USER' && item.is_active).length} tài khoản hoạt động`, icon: <FiUsers /> },
         { label: 'Cấp bậc', value: data.positions.length, note: 'Thiết lập theo từng phòng ban', icon: <FiLayers /> },
-        { label: 'Quản trị viên', value: data.users.filter((item) => item.role === 'SYSTEM_ADMIN').length, note: 'Quản lý toàn hệ thống', icon: <FiUserCheck /> },
+        { label: 'Quản trị viên', value: data.users.filter((item) => item.role === 'SYSTEM_ADMIN').length, note: 'Quản lý trong công ty', icon: <FiUserCheck /> },
       ]
     : []
 

@@ -117,7 +117,7 @@ export default function AdminLayout() {
               <Avatar className={styles.avatar}>{user.full_name?.charAt(0)}</Avatar>
               <span className={styles.accountText}>
                 <strong>{user.full_name}</strong>
-                <small>Quản trị hệ thống</small>
+                <small>{user.company_name || 'Quản trị công ty'}</small>
               </span>
               <FiChevronDown />
             </button>
