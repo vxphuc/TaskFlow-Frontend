@@ -1,12 +1,14 @@
 import { App, Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiPlus, FiPower } from 'react-icons/fi'
+import { useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { createPositionApi, getPositionsApi, setPositionActiveApi, updatePositionApi } from '../../api/positionApi'
 import styles from './PositionsPage.module.css'
 
 export default function PositionsPage() {
   const { message } = App.useApp()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [form] = Form.useForm()
   const [departments, setDepartments] = useState([])
   const [departmentId, setDepartmentId] = useState()
@@ -35,19 +37,24 @@ export default function PositionsPage() {
         const response = await getDepartmentsApi()
         const items = response.data.departments || []
         setDepartments(items)
-        const firstActive = items.find((item) => item.is_active) || items[0]
-        setDepartmentId(firstActive?.id)
-        await loadPositions(firstActive?.id)
+        const requestedId = searchParams.get('department_id')
+        const requestedDepartment = items.find((item) => item.id === requestedId)
+        const initialDepartment = requestedDepartment
+          || items.find((item) => item.is_active)
+          || items[0]
+        setDepartmentId(initialDepartment?.id)
+        await loadPositions(initialDepartment?.id)
       } catch (err) {
         message.error(err.response?.data?.message || 'Không thể tải phòng ban.')
         setLoading(false)
       }
     }
     loadDepartments()
-  }, [loadPositions, message])
+  }, [loadPositions, message, searchParams])
 
   const changeDepartment = (value) => {
     setDepartmentId(value)
+    setSearchParams({ department_id: value })
     loadPositions(value)
   }
 

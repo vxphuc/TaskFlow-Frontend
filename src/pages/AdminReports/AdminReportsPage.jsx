@@ -19,6 +19,7 @@ import {
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { FiActivity, FiBarChart2, FiCheckCircle, FiClock, FiDownload, FiEye, FiFile, FiRefreshCw } from 'react-icons/fi'
+import { useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getDepartmentMonthlyReportApi, getUserMonthlyReportApi } from '../../api/reportApi'
 import {
@@ -66,7 +67,11 @@ function StatusTag({ status }) {
 
 export default function AdminReportsPage() {
   const { message } = App.useApp()
-  const [mode, setMode] = useState('department')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedUserId = searchParams.get('user_id')
+  const [mode, setMode] = useState(
+    searchParams.get('mode') === 'user' ? 'user' : 'department',
+  )
   const [departments, setDepartments] = useState([])
   const [users, setUsers] = useState([])
   const [departmentId, setDepartmentId] = useState()
@@ -90,11 +95,25 @@ export default function AdminReportsPage() {
         setUsers(userItems)
         const firstDepartment = departmentItems.find((item) => item.is_active) || departmentItems[0]
         const firstUser = userItems.find((item) => item.is_active) || userItems[0]
-        setDepartmentId(firstDepartment?.id)
-        setUserId(firstUser?.id)
-        if (firstDepartment) {
+        const requestedUser = userItems.find((item) => item.id === requestedUserId)
+        const initialMode = requestedUser ? 'user' : 'department'
+        const initialDepartment = requestedUser
+          ? departmentItems.find((item) => item.id === requestedUser.department_id)
+          : firstDepartment
+        const initialUser = requestedUser || firstUser
+        setMode(initialMode)
+        setDepartmentId(initialDepartment?.id)
+        setUserId(initialUser?.id)
+        if (initialMode === 'user' && initialUser) {
+          const response = await getUserMonthlyReportApi(
+            initialUser.id,
+            dayjs().year(),
+            dayjs().month() + 1,
+          )
+          setReport(response.data.report)
+        } else if (initialDepartment) {
           const response = await getDepartmentMonthlyReportApi(
-            firstDepartment.id,
+            initialDepartment.id,
             dayjs().year(),
             dayjs().month() + 1,
           )
@@ -103,7 +122,7 @@ export default function AdminReportsPage() {
       })
       .catch((err) => setError(err.response?.data?.message || 'Không thể tải dữ liệu báo cáo.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [requestedUserId])
 
   const usersById = useMemo(
     () => Object.fromEntries(users.map((user) => [user.id, user])),
@@ -129,6 +148,11 @@ export default function AdminReportsPage() {
         ? await getDepartmentMonthlyReportApi(targetId, year, month)
         : await getUserMonthlyReportApi(targetId, year, month)
       setReport(response.data.report)
+      if (mode === 'user') {
+        setSearchParams({ mode: 'user', user_id: targetId })
+      } else {
+        setSearchParams({ mode: 'department', department_id: targetId })
+      }
     } catch (err) {
       setReport(null)
       setError(err.response?.data?.message || 'Không thể tải báo cáo.')

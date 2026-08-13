@@ -35,10 +35,10 @@ export default function AdminDashboardPage() {
 
   const stats = data
     ? [
-        { label: 'Phòng ban', value: data.departments.length, note: `${data.departments.filter((item) => item.is_active).length} đang hoạt động`, icon: <FiBriefcase /> },
-        { label: 'Nhân sự', value: data.users.filter((item) => item.role === 'USER').length, note: `${data.users.filter((item) => item.role === 'USER' && item.is_active).length} tài khoản hoạt động`, icon: <FiUsers /> },
-        { label: 'Cấp bậc', value: data.positions.length, note: 'Thiết lập theo từng phòng ban', icon: <FiLayers /> },
-        { label: 'Quản trị viên', value: data.users.filter((item) => item.role === 'SYSTEM_ADMIN').length, note: 'Quản lý trong công ty', icon: <FiUserCheck /> },
+        { label: 'Phòng ban', value: data.departments.length, note: `${data.departments.filter((item) => item.is_active).length} đang hoạt động`, path: '/admin/departments', icon: <FiBriefcase /> },
+        { label: 'Nhân sự', value: data.users.filter((item) => item.role === 'USER').length, note: `${data.users.filter((item) => item.role === 'USER' && item.is_active).length} tài khoản hoạt động`, path: '/admin/users', icon: <FiUsers /> },
+        { label: 'Cấp bậc', value: data.positions.length, note: 'Thiết lập theo từng phòng ban', path: '/admin/positions', icon: <FiLayers /> },
+        { label: 'Quản trị viên', value: data.users.filter((item) => item.role === 'SYSTEM_ADMIN').length, note: 'Quản lý trong công ty', path: '/admin/users', icon: <FiUserCheck /> },
       ]
     : []
 
@@ -58,10 +58,17 @@ export default function AdminDashboardPage() {
         <>
           <section className={styles.statGrid}>
             {stats.map((stat) => (
-              <article className={styles.statCard} key={stat.label}>
+              <button
+                type="button"
+                className={styles.statCard}
+                key={stat.label}
+                onClick={() => navigate(stat.path)}
+                aria-label={`Mở ${stat.label}`}
+              >
                 <span className={styles.statIcon}>{stat.icon}</span>
                 <div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div>
-              </article>
+                <FiArrowRight className={styles.statArrow} />
+              </button>
             ))}
           </section>
 

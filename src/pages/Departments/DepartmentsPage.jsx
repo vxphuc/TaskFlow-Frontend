@@ -1,6 +1,7 @@
 import { App, Button, Empty, Form, Input, Modal, Popconfirm, Space, Table, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiPlus, FiPower, FiSearch } from 'react-icons/fi'
+import { useNavigate } from 'react-router'
 import {
   createDepartmentApi,
   getDepartmentsApi,
@@ -11,6 +12,7 @@ import styles from './DepartmentsPage.module.css'
 
 export default function DepartmentsPage() {
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [form] = Form.useForm()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -91,7 +93,7 @@ export default function DepartmentsPage() {
     { title: 'Phòng ban', dataIndex: 'name', key: 'name', render: (value, row) => <div className={styles.nameCell}><strong>{value}</strong><span>{row.code}</span></div> },
     { title: 'Mô tả', dataIndex: 'description', key: 'description', render: (value) => value || <span className={styles.muted}>Chưa có mô tả</span> },
     { title: 'Trạng thái', dataIndex: 'is_active', key: 'status', width: 140, render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Đang hoạt động' : 'Đã tạm ngưng'}</Tag> },
-    { title: '', key: 'actions', width: 110, align: 'right', render: (_, row) => <Space size={4}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(row)} aria-label="Sửa phòng ban" /><Popconfirm title={row.is_active ? 'Tạm ngưng phòng ban?' : 'Kích hoạt phòng ban?'} description="Thay đổi này có hiệu lực ngay." okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(row)}><Button type="text" danger={row.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
+    { title: '', key: 'actions', width: 110, align: 'right', render: (_, row) => <Space size={4} onClick={(event) => event.stopPropagation()}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(row)} aria-label="Sửa phòng ban" /><Popconfirm title={row.is_active ? 'Tạm ngưng phòng ban?' : 'Kích hoạt phòng ban?'} description="Thay đổi này có hiệu lực ngay." okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(row)}><Button type="text" danger={row.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
   ]
 
   return (
@@ -105,7 +107,28 @@ export default function DepartmentsPage() {
           <Input allowClear prefix={<FiSearch />} placeholder="Tìm theo tên, mã phòng ban..." value={search} onChange={(event) => setSearch(event.target.value)} />
           <span>{filteredItems.length} phòng ban</span>
         </div>
-        <Table rowKey="id" columns={columns} dataSource={filteredItems} loading={loading} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 720 }} locale={{ emptyText: <Empty description="Chưa có phòng ban" /> }} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={filteredItems}
+          loading={loading}
+          pagination={{ pageSize: 8, showSizeChanger: false }}
+          scroll={{ x: 720 }}
+          onRow={(department) => ({
+            className: styles.clickableRow,
+            tabIndex: 0,
+            role: 'button',
+            'aria-label': `Mở phòng ban ${department.name}`,
+            onClick: () => navigate(`/admin/positions?department_id=${department.id}`),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                navigate(`/admin/positions?department_id=${department.id}`)
+              }
+            },
+          })}
+          locale={{ emptyText: <Empty description="Chưa có phòng ban" /> }}
+        />
       </section>
 
       <Modal title={editing ? 'Cập nhật phòng ban' : 'Tạo phòng ban mới'} open={open} onCancel={() => setOpen(false)} onOk={submit} confirmLoading={saving} okText={editing ? 'Lưu thay đổi' : 'Tạo phòng ban'} cancelText="Hủy" destroyOnHidden>

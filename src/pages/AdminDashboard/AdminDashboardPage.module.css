@@ -33,6 +33,8 @@
     gap: 16px; 
 }
 .statCard { 
+    position: relative;
+    width: 100%;
     min-height: 142px; 
     display: flex; 
     gap: 16px; 
@@ -40,7 +42,15 @@
     border: 1px solid #dfe7e1; 
     border-radius: 8px; 
     background: #fff; 
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
+.statCard:hover { border-color: #79a787; box-shadow: 0 7px 20px rgba(28, 67, 40, .09); transform: translateY(-1px); }
+.statCard:focus-visible { outline: 3px solid rgba(32, 106, 55, .2); outline-offset: 2px; }
+.statArrow { position: absolute; right: 18px; bottom: 18px; color: #206a37; }
 .statIcon { 
     width: 42px; 
     height: 42px; 

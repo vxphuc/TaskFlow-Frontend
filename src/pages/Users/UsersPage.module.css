@@ -35,7 +35,7 @@
 .toolbar { 
   min-height: 68px; 
   display: grid; 
-  grid-template-columns: minmax(230px,1fr) 210px 180px auto; 
+  grid-template-columns: minmax(230px,1fr) 190px 220px 180px auto;
   align-items: center; 
   gap: 10px; 
   padding: 12px 16px; 
@@ -73,6 +73,9 @@
 .muted { 
   color: #97a29a; 
 }
+.clickableRow { cursor: pointer; }
+.clickableRow:hover > td, .clickableRow:focus-visible > td { background: #f2f8f4 !important; }
+.clickableRow:focus-visible { outline: 2px solid #206a37; outline-offset: -2px; }
 .form { 
   margin-top: 22px; 
 }

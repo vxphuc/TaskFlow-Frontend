@@ -49,6 +49,20 @@ test.describe.serial('TaskFlow end-to-end', () => {
       await expectHealthyPage(page, heading)
     }
 
+    await page.goto('/admin')
+    await page.getByRole('button', { name: 'Mở Phòng ban' }).click()
+    await expect(page).toHaveURL(/\/admin\/departments$/)
+
+    await page.getByLabel('Mở phòng ban Phong E2E').click()
+    await expect(page).toHaveURL(/\/admin\/positions\?department_id=/)
+    await expect(page.getByText('Quan ly E2E', { exact: true })).toBeVisible()
+
+    await page.goto('/admin/users')
+    await expect(page.getByText('Tất cả cấp bậc')).toBeVisible()
+    await page.getByLabel('Xem công việc của Nhan vien E2E').click()
+    await expect(page).toHaveURL(/\/admin\/reports\?mode=user&user_id=/)
+    await expect(page.getByText('Theo nhân viên')).toBeVisible()
+
     expect(runtimeErrors).toEqual([])
   })
 

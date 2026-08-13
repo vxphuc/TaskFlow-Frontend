@@ -1,6 +1,7 @@
 import { App, Avatar, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiKey, FiPlus, FiPower, FiSearch, FiUser } from 'react-icons/fi'
+import { useNavigate } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getPositionsApi } from '../../api/positionApi'
 import { changeUserPasswordApi, createUserApi, getUsersApi, setUserActiveApi, updateUserApi } from '../../api/userApi'
@@ -8,6 +9,7 @@ import styles from './UsersPage.module.css'
 
 export default function UsersPage() {
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [form] = Form.useForm()
   const [passwordForm] = Form.useForm()
   const [users, setUsers] = useState([])
@@ -21,6 +23,7 @@ export default function UsersPage() {
   const [passwordUser, setPasswordUser] = useState(null)
   const [search, setSearch] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState()
+  const [positionFilter, setPositionFilter] = useState()
   const [statusFilter, setStatusFilter] = useState()
 
   const selectedRole = Form.useWatch('role', form)
@@ -87,10 +90,28 @@ export default function UsersPage() {
     return users.filter((user) => {
       const matchesSearch = !keyword || [user.full_name, user.phone].some((value) => value?.toLocaleLowerCase('vi').includes(keyword))
       const matchesDepartment = !departmentFilter || user.department_id === departmentFilter
+      const matchesPosition = !positionFilter || user.position_id === positionFilter
       const matchesStatus = statusFilter === undefined || user.is_active === statusFilter
-      return matchesSearch && matchesDepartment && matchesStatus
+      return matchesSearch && matchesDepartment && matchesPosition && matchesStatus
     })
-  }, [users, search, departmentFilter, statusFilter])
+  }, [users, search, departmentFilter, positionFilter, statusFilter])
+
+  const positionFilterOptions = useMemo(
+    () => allKnownPositions
+      .filter((position) => (
+        !departmentFilter || position.department_id === departmentFilter
+      ))
+      .sort((a, b) => (
+        a.level_order - b.level_order || a.name.localeCompare(b.name, 'vi')
+      ))
+      .map((position) => ({
+        value: position.id,
+        label: `${position.name} · ${departments.find(
+          (department) => department.id === position.department_id,
+        )?.name || 'Chưa phân phòng'}`,
+      })),
+    [allKnownPositions, departmentFilter, departments],
+  )
 
   const showCreate = () => {
     setEditing(null)
@@ -161,7 +182,7 @@ export default function UsersPage() {
     { title: 'Phòng ban', dataIndex: 'department_id', key: 'department', width: 180, render: departmentName },
     { title: 'Cấp bậc', dataIndex: 'position_id', key: 'position', width: 170, render: (value, user) => user.role === 'SYSTEM_ADMIN' ? <span className={styles.muted}>Không áp dụng</span> : positionName(value) },
     { title: 'Trạng thái', dataIndex: 'is_active', key: 'status', width: 135, render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Hoạt động' : 'Vô hiệu hóa'}</Tag> },
-    { title: '', key: 'actions', fixed: 'right', width: 145, align: 'right', render: (_, user) => <Space size={2}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(user)} aria-label="Sửa tài khoản" /><Button type="text" icon={<FiKey />} onClick={() => showPassword(user)} aria-label="Đổi mật khẩu" /><Popconfirm title={user.is_active ? 'Vô hiệu hóa tài khoản?' : 'Kích hoạt tài khoản?'} okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(user)}><Button type="text" danger={user.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
+    { title: '', key: 'actions', fixed: 'right', width: 145, align: 'right', render: (_, user) => <Space size={2} onClick={(event) => event.stopPropagation()}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(user)} aria-label="Sửa tài khoản" /><Button type="text" icon={<FiKey />} onClick={() => showPassword(user)} aria-label="Đổi mật khẩu" /><Popconfirm title={user.is_active ? 'Vô hiệu hóa tài khoản?' : 'Kích hoạt tài khoản?'} okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(user)}><Button type="text" danger={user.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
   ]
 
   return (
@@ -173,11 +194,33 @@ export default function UsersPage() {
       <section className={styles.panel}>
         <div className={styles.toolbar}>
           <Input allowClear prefix={<FiSearch />} placeholder="Tìm tên hoặc số điện thoại..." value={search} onChange={(event) => setSearch(event.target.value)} />
-          <Select allowClear placeholder="Tất cả phòng ban" value={departmentFilter} onChange={setDepartmentFilter} options={departments.map((item) => ({ value: item.id, label: item.name }))} />
+          <Select allowClear placeholder="Tất cả phòng ban" value={departmentFilter} onChange={(value) => { setDepartmentFilter(value); setPositionFilter(undefined) }} options={departments.map((item) => ({ value: item.id, label: item.name }))} />
+          <Select allowClear showSearch optionFilterProp="label" placeholder="Tất cả cấp bậc" value={positionFilter} onChange={setPositionFilter} options={positionFilterOptions} />
           <Select allowClear placeholder="Tất cả trạng thái" value={statusFilter} onChange={setStatusFilter} options={[{ value: true, label: 'Đang hoạt động' }, { value: false, label: 'Đã vô hiệu hóa' }]} />
           <span>{filteredUsers.length} tài khoản</span>
         </div>
-        <Table rowKey="id" columns={columns} dataSource={filteredUsers} loading={loading} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ x: 1050 }} locale={{ emptyText: <Empty description="Không có nhân sự phù hợp" /> }} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={filteredUsers}
+          loading={loading}
+          pagination={{ pageSize: 10, showSizeChanger: false }}
+          scroll={{ x: 1050 }}
+          onRow={(employee) => ({
+            className: styles.clickableRow,
+            tabIndex: 0,
+            role: 'button',
+            'aria-label': `Xem công việc của ${employee.full_name}`,
+            onClick: () => navigate(`/admin/reports?mode=user&user_id=${employee.id}`),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                navigate(`/admin/reports?mode=user&user_id=${employee.id}`)
+              }
+            },
+          })}
+          locale={{ emptyText: <Empty description="Không có nhân sự phù hợp" /> }}
+        />
       </section>
 
       <Modal title={editing ? 'Cập nhật tài khoản' : 'Tạo tài khoản mới'} open={open} onCancel={() => setOpen(false)} onOk={submit} confirmLoading={saving} okText={editing ? 'Lưu thay đổi' : 'Tạo tài khoản'} cancelText="Hủy" width={680} destroyOnHidden>
