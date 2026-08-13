@@ -9,6 +9,7 @@ const password = 'TaskFlow@123'
 
 async function login(page, phone) {
   await page.goto('/')
+  await page.getByLabel('Mã công ty').fill('TASKFLOW')
   await page.getByLabel('Số điện thoại').fill(phone)
   await page.getByLabel('Mật khẩu').fill(password)
   await page.getByRole('button', { name: 'Đăng nhập' }).click()

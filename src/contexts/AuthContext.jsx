@@ -10,9 +10,15 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('access_token')))
 
-  const login = async (phone, password) => {
-    const res = await loginApi({ phone, password })
+  const login = async (companyCode, phone, password) => {
+    const normalizedCompanyCode = companyCode.trim().toUpperCase()
+    const res = await loginApi({
+      company_code: normalizedCompanyCode,
+      phone,
+      password,
+    })
     localStorage.setItem('access_token', res.data.access_token)
+    localStorage.setItem('taskflow_company_code', normalizedCompanyCode)
     setUser(res.data.user)
     return res.data.user
   }

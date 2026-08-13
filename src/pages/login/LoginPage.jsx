@@ -1,6 +1,6 @@
 import { Alert, Button, Form, Input } from 'antd'
 import { useState } from 'react'
-import { FiArrowRight, FiCheckCircle, FiLock, FiPhone } from 'react-icons/fi'
+import { FiArrowRight, FiBriefcase, FiCheckCircle, FiLock, FiPhone } from 'react-icons/fi'
 import { useAuth } from '../../contexts/useAuth'
 import styles from './LoginPage.module.css'
 
@@ -13,7 +13,7 @@ export default function LoginPage() {
     setError('')
     setSubmitting(true)
     try {
-      await login(values.phone, values.password)
+      await login(values.company_code, values.phone, values.password)
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể đăng nhập. Vui lòng thử lại.')
     } finally {
@@ -47,7 +47,28 @@ export default function LoginPage() {
         <div className={styles.formWrap}>
           <header><span>CHÀO MỪNG TRỞ LẠI</span><h2>Đăng nhập hệ thống</h2><p>Sử dụng tài khoản được doanh nghiệp cấp cho bạn.</p></header>
           {error && <Alert className={styles.alert} type="error" title={error} showIcon closable onClose={() => setError('')} />}
-          <Form layout="vertical" size="large" onFinish={onFinish} requiredMark={false}>
+          <Form
+            layout="vertical"
+            size="large"
+            onFinish={onFinish}
+            requiredMark={false}
+            initialValues={{
+              company_code: localStorage.getItem('taskflow_company_code') || '',
+            }}
+          >
+            <Form.Item
+              label="Mã công ty"
+              name="company_code"
+              normalize={(value) => value?.trimStart().toUpperCase()}
+              rules={[{ required: true, message: 'Vui lòng nhập mã công ty.' }]}
+            >
+              <Input
+                prefix={<FiBriefcase />}
+                placeholder="Ví dụ: TASKFLOW"
+                autoComplete="organization"
+                maxLength={50}
+              />
+            </Form.Item>
             <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }]}>
               <Input prefix={<FiPhone />} placeholder="Nhập số điện thoại" autoComplete="tel" inputMode="tel" />
             </Form.Item>

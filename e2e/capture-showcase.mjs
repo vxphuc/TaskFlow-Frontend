@@ -87,12 +87,13 @@ async function api(pathname, { method = 'GET', token, data } = {}) {
 async function signIn(phone) {
   return api('/auth/login', {
     method: 'POST',
-    data: { phone, password },
+    data: { company_code: 'TASKFLOW', phone, password },
   })
 }
 
 async function loginInBrowser(page, phone) {
   await page.goto(webBaseUrl)
+  await page.getByLabel('Mã công ty').fill('TASKFLOW')
   await page.getByLabel('Số điện thoại').fill(phone)
   await page.getByLabel('Mật khẩu').fill(password)
   await page.getByRole('button', { name: 'Đăng nhập' }).click()
