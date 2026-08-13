@@ -50,6 +50,20 @@ test.describe.serial('TaskFlow end-to-end', () => {
       await expectHealthyPage(page, heading)
     }
 
+    await page.goto('/admin/reports')
+    const collapsedReportPanels = [
+      'Hiệu suất theo cấp bậc',
+      'Hiệu suất nhân viên',
+      'Danh sách công việc',
+    ]
+    for (const panelName of collapsedReportPanels) {
+      const panelToggle = page.getByRole('button', { name: `Mở ${panelName}` })
+      await expect(panelToggle).toHaveAttribute('aria-expanded', 'false')
+      await panelToggle.click()
+      await expect(page.getByRole('button', { name: `Thu gọn ${panelName}` }))
+        .toHaveAttribute('aria-expanded', 'true')
+    }
+
     await page.goto('/admin')
     await page.getByRole('button', { name: 'Mở Phòng ban' }).click()
     await expect(page).toHaveURL(/\/admin\/departments$/)

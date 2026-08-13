@@ -18,7 +18,7 @@ import {
 } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FiActivity, FiBarChart2, FiCheckCircle, FiClock, FiDownload, FiEye, FiFile, FiRefreshCw } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiCheckCircle, FiChevronDown, FiClock, FiDownload, FiEye, FiFile, FiRefreshCw } from 'react-icons/fi'
 import { useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getDepartmentMonthlyReportApi, getUserMonthlyReportApi } from '../../api/reportApi'
@@ -83,6 +83,11 @@ export default function AdminReportsPage() {
   const [taskKind, setTaskKind] = useState('ALL')
   const [taskState, setTaskState] = useState('ALL')
   const [taskPage, setTaskPage] = useState(1)
+  const [expandedPanels, setExpandedPanels] = useState({
+    positions: false,
+    assignees: false,
+    tasks: false,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -154,6 +159,7 @@ export default function AdminReportsPage() {
         : await getUserMonthlyReportApi(targetId, year, month)
       setReport(response.data.report)
       setTaskPage(1)
+      setExpandedPanels({ positions: false, assignees: false, tasks: false })
       if (mode === 'user') {
         setSearchParams({ mode: 'user', user_id: targetId })
       } else {
@@ -174,6 +180,7 @@ export default function AdminReportsPage() {
     setTaskKind('ALL')
     setTaskState('ALL')
     setTaskPage(1)
+    setExpandedPanels({ positions: false, assignees: false, tasks: false })
   }
 
   const openTaskAudit = async (task) => {
@@ -263,9 +270,17 @@ export default function AdminReportsPage() {
     setTaskKind(kind)
     setTaskState(state)
     setTaskPage(1)
+    setExpandedPanels((current) => ({ ...current, tasks: true }))
     window.requestAnimationFrame(() => {
       taskListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
+  }
+
+  const togglePanel = (panel) => {
+    setExpandedPanels((current) => ({
+      ...current,
+      [panel]: !current[panel],
+    }))
   }
 
   const taskColumns = [
@@ -428,11 +443,40 @@ export default function AdminReportsPage() {
           </section>
           {mode === 'department' && (
             <>
-              <section className={styles.panel}><div className={styles.panelTitle}><h2>Hiệu suất theo cấp bậc</h2><span>{report.position_breakdown?.length || 0} nhóm</span></div><Table rowKey={(row) => row.position_id || 'none'} columns={breakdownColumns} dataSource={report.position_breakdown || []} pagination={false} scroll={{ x: 560 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu cấp bậc" /> }} /></section>
-              <section className={styles.panel}><div className={styles.panelTitle}><h2>Hiệu suất nhân viên</h2><span>{report.assignee_breakdown?.length || 0} nhân viên</span></div><Table rowKey="user_id" columns={assigneeColumns} dataSource={report.assignee_breakdown || []} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 620 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu nhân viên" /> }} /></section>
+              <ReportPanel
+                id="position-performance"
+                title="Hiệu suất theo cấp bậc"
+                count={`${report.position_breakdown?.length || 0} nhóm`}
+                open={expandedPanels.positions}
+                onToggle={() => togglePanel('positions')}
+              >
+                <Table rowKey={(row) => row.position_id || 'none'} columns={breakdownColumns} dataSource={report.position_breakdown || []} pagination={false} scroll={{ x: 560 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu cấp bậc" /> }} />
+              </ReportPanel>
+              <ReportPanel
+                id="employee-performance"
+                title="Hiệu suất nhân viên"
+                count={`${report.assignee_breakdown?.length || 0} nhân viên`}
+                open={expandedPanels.assignees}
+                onToggle={() => togglePanel('assignees')}
+              >
+                <Table rowKey="user_id" columns={assigneeColumns} dataSource={report.assignee_breakdown || []} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 620 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu nhân viên" /> }} />
+              </ReportPanel>
             </>
           )}
-          <section className={styles.panel} ref={taskListRef}><div className={styles.panelTitle}><h2>Danh sách công việc</h2><div className={styles.panelTools}><Segmented size="small" value={taskKind} onChange={(value) => { setTaskKind(value); setTaskPage(1) }} options={[{ value: 'ALL', label: 'Tất cả' }, { value: 'MAIN_TASK', label: 'Task chính' }, { value: 'SUBTASK', label: 'Subtask' }]} /><Select size="small" value={taskState} onChange={(value) => { setTaskState(value); setTaskPage(1) }} aria-label="Lọc trạng thái công việc" options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }, { value: 'PROCESSING', label: 'Đang xử lý' }, { value: 'OVERDUE', label: 'Quá hạn' }]} /><span>{filteredTasks.length} công việc</span></div></div><Table rowKey="id" columns={taskColumns} dataSource={filteredTasks} pagination={{ current: taskPage, pageSize: 8, showSizeChanger: false, onChange: setTaskPage }} scroll={{ x: 1160 }} locale={{ emptyText: <Empty description="Không có công việc phù hợp" /> }} /></section>
+          <ReportPanel
+            id="task-list"
+            title="Danh sách công việc"
+            count={`${filteredTasks.length} công việc`}
+            open={expandedPanels.tasks}
+            onToggle={() => togglePanel('tasks')}
+            panelRef={taskListRef}
+          >
+            <div className={styles.panelTools}>
+              <Segmented size="small" value={taskKind} onChange={(value) => { setTaskKind(value); setTaskPage(1) }} options={[{ value: 'ALL', label: 'Tất cả' }, { value: 'MAIN_TASK', label: 'Task chính' }, { value: 'SUBTASK', label: 'Subtask' }]} />
+              <Select size="small" value={taskState} onChange={(value) => { setTaskState(value); setTaskPage(1) }} aria-label="Lọc trạng thái công việc" options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }, { value: 'PROCESSING', label: 'Đang xử lý' }, { value: 'OVERDUE', label: 'Quá hạn' }]} />
+            </div>
+            <Table rowKey="id" columns={taskColumns} dataSource={filteredTasks} pagination={{ current: taskPage, pageSize: 8, showSizeChanger: false, onChange: setTaskPage }} scroll={{ x: 1160 }} locale={{ emptyText: <Empty description="Không có công việc phù hợp" /> }} />
+          </ReportPanel>
         </>
       ) : <Empty className={styles.emptyReport} description="Chọn điều kiện và xem báo cáo" />}
 
@@ -440,6 +484,32 @@ export default function AdminReportsPage() {
         {auditLoading ? <div className={styles.drawerLoading}><Spin /></div> : audit ? <Tabs items={auditTabs} /> : <Empty description="Không tải được dữ liệu task" />}
       </Drawer>
     </div>
+  )
+}
+
+function ReportPanel({ id, title, count, open, onToggle, panelRef, children }) {
+  return (
+    <section className={styles.panel} ref={panelRef}>
+      <button
+        type="button"
+        className={styles.panelToggle}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`${id}-content`}
+        aria-label={`${open ? 'Thu gọn' : 'Mở'} ${title}`}
+      >
+        <h2>{title}</h2>
+        <span>
+          {count}
+          <FiChevronDown className={open ? styles.chevronOpen : ''} />
+        </span>
+      </button>
+      {open && (
+        <div className={styles.panelContent} id={`${id}-content`}>
+          {children}
+        </div>
+      )}
+    </section>
   )
 }
 
