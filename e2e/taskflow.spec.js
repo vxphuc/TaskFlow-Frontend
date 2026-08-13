@@ -176,8 +176,27 @@ test.describe.serial('TaskFlow end-to-end', () => {
     const download = await downloadPromise
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/)
 
+    const adminContext = await browser.newContext()
+    const adminPage = await adminContext.newPage()
+    const adminErrors = watchRuntimeErrors(adminPage)
+    await login(adminPage, '0900000000')
+    await adminPage.goto('/admin/users')
+    await adminPage.getByLabel('Xem công việc của Nhan vien E2E').click()
+    await adminPage.getByRole('button', { name: 'Xem đã hoàn thành' }).click()
+    const statusFilter = adminPage.locator('.ant-select').filter({
+      has: adminPage.getByLabel('Lọc trạng thái công việc'),
+    })
+    await expect(statusFilter).toContainText('Đã hoàn thành')
+    await adminPage.getByRole('button', { name: 'Xem chi tiết task' }).first().click()
+    await adminPage.getByRole('tab', { name: 'Cây tiến độ' }).click()
+    await expect(adminPage.getByRole('heading', {
+      name: 'Tổng quan Task và các nhánh thực hiện',
+    })).toBeVisible()
+
     expect(managerErrors).toEqual([])
     expect(staffErrors).toEqual([])
+    expect(adminErrors).toEqual([])
+    await adminContext.close()
     await managerContext.close()
     await staffContext.close()
   })

@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from 'antd'
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiActivity, FiBarChart2, FiCheckCircle, FiClock, FiDownload, FiEye, FiFile, FiRefreshCw } from 'react-icons/fi'
 import { useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
@@ -28,10 +28,12 @@ import {
   getTaskAttachmentsApi,
   getTaskDetailApi,
   getTaskHistoryApi,
+  getTaskProgressTreeApi,
   getTaskSubmissionsApi,
   getTaskSubtasksApi,
 } from '../../api/taskApi'
 import { getUsersApi } from '../../api/userApi'
+import TaskProgressTree from '../UserTaskDetail/TaskProgressTree'
 import styles from './AdminReportsPage.module.css'
 
 const statusMeta = {
@@ -79,12 +81,15 @@ export default function AdminReportsPage() {
   const [period, setPeriod] = useState(dayjs())
   const [report, setReport] = useState(null)
   const [taskKind, setTaskKind] = useState('ALL')
+  const [taskState, setTaskState] = useState('ALL')
+  const [taskPage, setTaskPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [auditLoading, setAuditLoading] = useState(false)
   const [attachmentLoading, setAttachmentLoading] = useState(null)
   const [audit, setAudit] = useState(null)
+  const taskListRef = useRef(null)
 
   useEffect(() => {
     Promise.all([getDepartmentsApi(), getUsersApi({ role: 'USER' })])
@@ -148,6 +153,7 @@ export default function AdminReportsPage() {
         ? await getDepartmentMonthlyReportApi(targetId, year, month)
         : await getUserMonthlyReportApi(targetId, year, month)
       setReport(response.data.report)
+      setTaskPage(1)
       if (mode === 'user') {
         setSearchParams({ mode: 'user', user_id: targetId })
       } else {
@@ -165,6 +171,9 @@ export default function AdminReportsPage() {
     setMode(value)
     setReport(null)
     setError('')
+    setTaskKind('ALL')
+    setTaskState('ALL')
+    setTaskPage(1)
   }
 
   const openTaskAudit = async (task) => {
@@ -172,21 +181,25 @@ export default function AdminReportsPage() {
     setAuditLoading(true)
     setAudit(null)
     try {
-      const [detail, subtasks, submissions, comments, history, attachments] = await Promise.all([
-        getTaskDetailApi(task.id),
+      const detail = await getTaskDetailApi(task.id)
+      const detailTask = detail.data.task
+      const progressRootId = detailTask.parent_task_id || detailTask.id
+      const [subtasks, submissions, comments, history, attachments, progress] = await Promise.all([
         getTaskSubtasksApi(task.id),
         getTaskSubmissionsApi(task.id),
         getTaskCommentsApi(task.id),
         getTaskHistoryApi(task.id),
         getTaskAttachmentsApi(task.id),
+        getTaskProgressTreeApi(progressRootId),
       ])
       setAudit({
-        task: detail.data.task,
+        task: detailTask,
         subtasks: subtasks.data.subtasks || [],
         submissions: submissions.data.submissions || [],
         comments: comments.data.comments || [],
         logs: history.data.logs || [],
         attachments: attachments.data.attachments || [],
+        progress: progress.data,
       })
     } catch (err) {
       message.error(err.response?.data?.message || 'Không thể tải chi tiết task.')
@@ -218,18 +231,42 @@ export default function AdminReportsPage() {
   const totalTasks = summary?.total_tasks ?? summary?.total_assigned_tasks ?? 0
   const tasks = report?.tasks || []
   const filteredTasks = tasks.filter((task) => {
-    if (taskKind === 'MAIN_TASK') return !task.parent_task_id
-    if (taskKind === 'SUBTASK') return Boolean(task.parent_task_id)
+    const matchesKind = taskKind === 'ALL'
+      || (taskKind === 'MAIN_TASK' && !task.parent_task_id)
+      || (taskKind === 'SUBTASK' && Boolean(task.parent_task_id))
+    if (!matchesKind) return false
+
+    if (taskState === 'COMPLETED') return task.status === 'COMPLETED'
+    if (taskState === 'PROCESSING') {
+      return ['IN_PROGRESS', 'SUBMITTED', 'REVIEWING'].includes(task.status)
+    }
+    if (taskState === 'OVERDUE') {
+      return task.kpi_timeline === 'OVERDUE'
+        || (
+          task.due_date
+          && dayjs(task.due_date).isBefore(dayjs())
+          && !['COMPLETED', 'CANCELLED'].includes(task.status)
+        )
+    }
     return true
   })
   const workItemBreakdown = report?.work_item_breakdown || {}
 
   const statItems = summary ? [
-    { label: 'Tổng công việc', value: totalTasks, icon: <FiBarChart2 />, tone: 'neutral' },
-    { label: 'Đã hoàn thành', value: summary.completed_tasks, icon: <FiCheckCircle />, tone: 'success' },
-    { label: 'Đang xử lý', value: (summary.in_progress_tasks || 0) + (summary.submitted_tasks || 0) + (summary.reviewing_tasks || 0), icon: <FiActivity />, tone: 'info' },
-    { label: 'Quá hạn', value: summary.overdue_tasks, icon: <FiClock />, tone: 'danger' },
+    { label: 'Tổng công việc', value: totalTasks, kind: 'ALL', state: 'ALL', icon: <FiBarChart2 />, tone: 'neutral' },
+    { label: 'Đã hoàn thành', value: summary.completed_tasks, kind: 'ALL', state: 'COMPLETED', icon: <FiCheckCircle />, tone: 'success' },
+    { label: 'Đang xử lý', value: (summary.in_progress_tasks || 0) + (summary.submitted_tasks || 0) + (summary.reviewing_tasks || 0), kind: 'ALL', state: 'PROCESSING', icon: <FiActivity />, tone: 'info' },
+    { label: 'Quá hạn', value: summary.overdue_tasks, kind: 'ALL', state: 'OVERDUE', icon: <FiClock />, tone: 'danger' },
   ] : []
+
+  const showTaskList = (kind, state) => {
+    setTaskKind(kind)
+    setTaskState(state)
+    setTaskPage(1)
+    window.requestAnimationFrame(() => {
+      taskListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const taskColumns = [
     { title: 'Công việc', dataIndex: 'title', key: 'title', width: 280, render: (value, row) => <div className={styles.taskName}><strong>{value}</strong><span><Tag color={row.parent_task_id ? 'blue' : 'green'}>{row.parent_task_id ? 'Subtask' : 'Task chính'}</Tag>{row.task_type === 'RECURRING' ? 'Định kỳ' : 'Một lần'}</span></div> },
@@ -296,6 +333,17 @@ export default function AdminReportsPage() {
         </div>
       ),
     },
+    {
+      key: 'progress',
+      label: 'Cây tiến độ',
+      children: (
+        <TaskProgressTree
+          data={audit.progress}
+          loading={false}
+          onOpenTask={(taskId) => openTaskAudit({ id: taskId })}
+        />
+      ),
+    },
     { key: 'subtasks', label: `Subtask (${audit.subtasks.length})`, children: <AuditList items={audit.subtasks} empty="Không có subtask" renderItem={(item) => <><strong>{item.title}</strong><span><StatusTag status={item.status} /> · {usersById[item.assigned_to]?.full_name || 'Không xác định'}</span></>} /> },
     {
       key: 'submissions',
@@ -350,16 +398,27 @@ export default function AdminReportsPage() {
       {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : report ? (
         <>
           <section className={styles.statGrid}>
-            {statItems.map((item) => <article className={styles.statItem} key={item.label}><span data-tone={item.tone}>{item.icon}</span><div><small>{item.label}</small><strong>{item.value || 0}</strong></div></article>)}
+            {statItems.map((item) => (
+              <button
+                type="button"
+                className={styles.statItem}
+                key={item.label}
+                onClick={() => showTaskList(item.kind, item.state)}
+                aria-label={`Xem ${item.label.toLocaleLowerCase('vi')}`}
+              >
+                <span data-tone={item.tone}>{item.icon}</span>
+                <div><small>{item.label}</small><strong>{item.value || 0}</strong></div>
+              </button>
+            ))}
           </section>
           <section className={styles.typeSummary}>
             <article>
               <div><strong>Task chính</strong><span>{workItemBreakdown.main_tasks?.total_tasks || 0} công việc</span></div>
-              <p><span>Hoàn thành <strong>{workItemBreakdown.main_tasks?.completed_tasks || 0}</strong></span><span>Quá hạn <strong>{workItemBreakdown.main_tasks?.overdue_tasks || 0}</strong></span><span>Tỷ lệ <strong>{workItemBreakdown.main_tasks?.completion_rate || 0}%</strong></span></p>
+              <p><button type="button" onClick={() => showTaskList('MAIN_TASK', 'COMPLETED')}>Hoàn thành <strong>{workItemBreakdown.main_tasks?.completed_tasks || 0}</strong></button><button type="button" onClick={() => showTaskList('MAIN_TASK', 'OVERDUE')}>Quá hạn <strong>{workItemBreakdown.main_tasks?.overdue_tasks || 0}</strong></button><span>Tỷ lệ <strong>{workItemBreakdown.main_tasks?.completion_rate || 0}%</strong></span></p>
             </article>
             <article>
               <div><strong>Subtask</strong><span>{workItemBreakdown.subtasks?.total_tasks || 0} công việc</span></div>
-              <p><span>Hoàn thành <strong>{workItemBreakdown.subtasks?.completed_tasks || 0}</strong></span><span>Quá hạn <strong>{workItemBreakdown.subtasks?.overdue_tasks || 0}</strong></span><span>Tỷ lệ <strong>{workItemBreakdown.subtasks?.completion_rate || 0}%</strong></span></p>
+              <p><button type="button" onClick={() => showTaskList('SUBTASK', 'COMPLETED')}>Hoàn thành <strong>{workItemBreakdown.subtasks?.completed_tasks || 0}</strong></button><button type="button" onClick={() => showTaskList('SUBTASK', 'OVERDUE')}>Quá hạn <strong>{workItemBreakdown.subtasks?.overdue_tasks || 0}</strong></button><span>Tỷ lệ <strong>{workItemBreakdown.subtasks?.completion_rate || 0}%</strong></span></p>
             </article>
           </section>
           <section className={styles.ratePanel}>
@@ -373,7 +432,7 @@ export default function AdminReportsPage() {
               <section className={styles.panel}><div className={styles.panelTitle}><h2>Hiệu suất nhân viên</h2><span>{report.assignee_breakdown?.length || 0} nhân viên</span></div><Table rowKey="user_id" columns={assigneeColumns} dataSource={report.assignee_breakdown || []} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 620 }} locale={{ emptyText: <Empty description="Chưa có dữ liệu nhân viên" /> }} /></section>
             </>
           )}
-          <section className={styles.panel}><div className={styles.panelTitle}><h2>Danh sách công việc</h2><div className={styles.panelTools}><Segmented size="small" value={taskKind} onChange={setTaskKind} options={[{ value: 'ALL', label: 'Tất cả' }, { value: 'MAIN_TASK', label: 'Task chính' }, { value: 'SUBTASK', label: 'Subtask' }]} /><span>{filteredTasks.length} công việc</span></div></div><Table rowKey="id" columns={taskColumns} dataSource={filteredTasks} pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 1160 }} locale={{ emptyText: <Empty description="Không có công việc phù hợp" /> }} /></section>
+          <section className={styles.panel} ref={taskListRef}><div className={styles.panelTitle}><h2>Danh sách công việc</h2><div className={styles.panelTools}><Segmented size="small" value={taskKind} onChange={(value) => { setTaskKind(value); setTaskPage(1) }} options={[{ value: 'ALL', label: 'Tất cả' }, { value: 'MAIN_TASK', label: 'Task chính' }, { value: 'SUBTASK', label: 'Subtask' }]} /><Select size="small" value={taskState} onChange={(value) => { setTaskState(value); setTaskPage(1) }} aria-label="Lọc trạng thái công việc" options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }, { value: 'PROCESSING', label: 'Đang xử lý' }, { value: 'OVERDUE', label: 'Quá hạn' }]} /><span>{filteredTasks.length} công việc</span></div></div><Table rowKey="id" columns={taskColumns} dataSource={filteredTasks} pagination={{ current: taskPage, pageSize: 8, showSizeChanger: false, onChange: setTaskPage }} scroll={{ x: 1160 }} locale={{ emptyText: <Empty description="Không có công việc phù hợp" /> }} /></section>
         </>
       ) : <Empty className={styles.emptyReport} description="Chọn điều kiện và xem báo cáo" />}
 
