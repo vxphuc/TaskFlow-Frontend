@@ -13,6 +13,7 @@ import {
   Space,
   Table,
   Tag,
+  TimePicker,
   Tooltip,
 } from 'antd'
 import dayjs from 'dayjs'
@@ -57,6 +58,17 @@ const weekdayOptions = [
 
 const frequencyLabel = (frequency) =>
   frequencyOptions.find((item) => item.value === frequency)?.label || frequency
+
+const parseDueTime = (value = '23:59') => {
+  const [hour, minute] = String(value).split(':').map(Number)
+  return dayjs()
+    .hour(Number.isInteger(hour) ? hour : 23)
+    .minute(Number.isInteger(minute) ? minute : 59)
+    .second(0)
+}
+
+const deadlineLabel = (template) =>
+  `${template.due_after_days} ngày · ${template.due_time || '23:59'}`
 
 const scheduleLabel = (template) => {
   if (!template) return 'Chưa có lịch'
@@ -149,7 +161,8 @@ export default function UserRecurringPage() {
       priority: 'MEDIUM',
       frequency: 'MONTHLY',
       generate_day: 1,
-      due_after_days: 4,
+      due_after_days: 0,
+      due_time: parseDueTime(),
       assigned_to: user.id,
       reviewer_id: undefined,
     })
@@ -166,6 +179,7 @@ export default function UserRecurringPage() {
       frequency: template.frequency,
       generate_day: template.generate_day,
       due_after_days: template.due_after_days,
+      due_time: parseDueTime(template.due_time),
       priority: template.priority,
     })
     setFormOpen(true)
@@ -174,11 +188,15 @@ export default function UserRecurringPage() {
   const saveTemplate = async (values) => {
     setSubmitting(true)
     try {
+      const payload = {
+        ...values,
+        due_time: values.due_time?.format('HH:mm') || '23:59',
+      }
       if (editingTemplate) {
-        await updateRecurringTemplateApi(editingTemplate.id, values)
+        await updateRecurringTemplateApi(editingTemplate.id, payload)
         message.success('Đã cập nhật mẫu task định kỳ.')
       } else {
-        await createRecurringTemplateApi(values)
+        await createRecurringTemplateApi(payload)
         message.success('Đã tạo mẫu task định kỳ.')
       }
       setFormOpen(false)
@@ -283,7 +301,7 @@ export default function UserRecurringPage() {
       render: (_, row) => (
         <div className={styles.schedule}>
           <span>{frequencyLabel(row.frequency)}</span>
-          <small>{scheduleLabel(row)} · hạn sau {row.due_after_days} ngày</small>
+          <small>{scheduleLabel(row)} · deadline {deadlineLabel(row)}</small>
         </div>
       ),
     },
@@ -383,8 +401,8 @@ export default function UserRecurringPage() {
       title: 'Deadline',
       dataIndex: 'due_date',
       key: 'dueDate',
-      width: 140,
-      render: (value) => value ? dayjs(value).format('DD/MM/YYYY') : 'Chưa có',
+      width: 165,
+      render: (value) => value ? dayjs(value).format('DD/MM/YYYY HH:mm') : 'Chưa có',
     },
   ]
 
@@ -512,8 +530,8 @@ export default function UserRecurringPage() {
             )}
             <Form.Item
               name="due_after_days"
-              label="Thời hạn hoàn thành"
-              extra="0 là hết hạn cuối ngày phát sinh."
+              label="Deadline sau"
+              extra="Nhập 0 nếu deadline nằm trong ngày task được sinh."
               rules={[{ required: true }]}
             >
               <InputNumber
@@ -521,6 +539,19 @@ export default function UserRecurringPage() {
                 max={365}
                 suffix="ngày"
                 className={styles.fullWidth}
+              />
+            </Form.Item>
+            <Form.Item
+              name="due_time"
+              label="Giờ hết hạn"
+              rules={[{ required: true, message: 'Chọn giờ hết hạn.' }]}
+            >
+              <TimePicker
+                format="HH:mm"
+                minuteStep={5}
+                showNow={false}
+                className={styles.fullWidth}
+                placeholder="Chọn giờ"
               />
             </Form.Item>
           </div>
@@ -585,7 +616,7 @@ export default function UserRecurringPage() {
             <div>
               <strong>{selectedTemplate.title}</strong>
               <small>
-                {scheduleLabel(selectedTemplate)} · Hạn sau {selectedTemplate.due_after_days} ngày
+                {scheduleLabel(selectedTemplate)} · Deadline {deadlineLabel(selectedTemplate)}
               </small>
             </div>
           </div>

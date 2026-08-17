@@ -117,6 +117,12 @@ test.describe.serial('TaskFlow end-to-end', () => {
       await expectHealthyPage(page, heading)
     }
 
+    await page.goto('/app/recurring')
+    await page.getByRole('button', { name: 'Tạo mẫu' }).click()
+    await expect(page.getByLabel('Deadline sau')).toHaveValue('0')
+    await expect(page.getByLabel('Giờ hết hạn')).toHaveValue('23:59')
+    await page.getByRole('button', { name: 'Đóng' }).click()
+
     await page.goto('/app')
     await expect(page.getByLabel('Lọc theo tên nhân viên')).toBeVisible()
     await expect(page.getByLabel('Lọc theo tháng giao việc')).toBeVisible()
