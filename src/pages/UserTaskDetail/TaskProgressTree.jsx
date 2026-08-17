@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Button, Empty, Progress, Skeleton, Tooltip } from 'antd'
 import {
   FiAlertTriangle,
   FiArrowRight,
   FiCheckCircle,
+  FiChevronDown,
+  FiChevronUp,
   FiCircle,
   FiGitBranch,
   FiList,
@@ -17,8 +20,14 @@ import styles from './TaskProgressTree.module.css'
 const MAX_VISIBLE_CHECKLIST_ITEMS = 5
 
 function ProgressNode({ node, isRoot, onOpenTask }) {
-  const visibleItems = node.checklist.slice(0, MAX_VISIBLE_CHECKLIST_ITEMS)
-  const hiddenItems = node.checklist.length - visibleItems.length
+  const [isChecklistExpanded, setIsChecklistExpanded] = useState(false)
+  const hiddenItems = Math.max(
+    node.checklist.length - MAX_VISIBLE_CHECKLIST_ITEMS,
+    0,
+  )
+  const visibleItems = isChecklistExpanded
+    ? node.checklist
+    : node.checklist.slice(0, MAX_VISIBLE_CHECKLIST_ITEMS)
 
   return (
     <article className={`${styles.node} ${isRoot ? styles.rootNode : ''}`}>
@@ -85,8 +94,23 @@ function ProgressNode({ node, isRoot, onOpenTask }) {
             ))}
             {hiddenItems > 0 && (
               <li className={styles.moreItems}>
-                <FiList />
-                <span>Thêm {hiddenItems} hạng mục khác</span>
+                <button
+                  type="button"
+                  aria-expanded={isChecklistExpanded}
+                  aria-label={
+                    isChecklistExpanded
+                      ? `Thu gọn checklist ${node.title}`
+                      : `Xem thêm ${hiddenItems} hạng mục của ${node.title}`
+                  }
+                  onClick={() => setIsChecklistExpanded((current) => !current)}
+                >
+                  {isChecklistExpanded ? <FiChevronUp /> : <FiChevronDown />}
+                  <span>
+                    {isChecklistExpanded
+                      ? 'Thu gọn checklist'
+                      : `Xem thêm ${hiddenItems} hạng mục`}
+                  </span>
+                </button>
               </li>
             )}
           </ul>
@@ -161,6 +185,7 @@ export default function TaskProgressTree({ data, loading, onOpenTask }) {
 
       <div className={styles.tree}>
         <ProgressNode
+          key={data.root.id}
           node={data.root}
           isRoot
           onOpenTask={onOpenTask}

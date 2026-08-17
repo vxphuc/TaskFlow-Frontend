@@ -203,11 +203,37 @@ test.describe.serial('TaskFlow end-to-end', () => {
     )
     expect(checklistResponse.ok()).toBeTruthy()
 
+    for (let itemNumber = 1; itemNumber <= 7; itemNumber += 1) {
+      const taskChecklistResponse = await managerContext.request.post(
+        `http://127.0.0.1:5173/api/tasks/${parentTaskId}/checklist`,
+        {
+          headers: authorization,
+          data: { content: `Checklist chính E2E ${itemNumber}` },
+        },
+      )
+      expect(taskChecklistResponse.ok()).toBeTruthy()
+    }
+
     await managerPage.reload()
+    await managerPage.getByRole('tab', { name: /Tiến độ tổng quan/ }).click()
+    await expect(managerPage.getByText('Checklist chính E2E 6', { exact: true })).toHaveCount(0)
+    await managerPage.getByRole('button', {
+      name: /Xem thêm 2 hạng mục của Task E2E realtime/,
+    }).click()
+    await expect(managerPage.getByText('Checklist chính E2E 6', { exact: true })).toBeVisible()
+    await expect(managerPage.getByText('Checklist chính E2E 7', { exact: true })).toBeVisible()
+    await managerPage.getByRole('button', {
+      name: /Thu gọn checklist Task E2E realtime/,
+    }).click()
+    await expect(managerPage.getByText('Checklist chính E2E 6', { exact: true })).toHaveCount(0)
+
     await managerPage.getByRole('tab', { name: /Checklist/ }).click()
-    await expect(managerPage.getByText('Tiến độ checklist của các Subtask')).toBeVisible()
-    await expect(managerPage.getByText('Subtask checklist E2E')).toBeVisible()
-    await expect(managerPage.getByText('Hoàn thiện checklist Subtask E2E')).toBeVisible()
+    const activeChecklistPanel = managerPage.getByRole('tabpanel', {
+      name: /Checklist/,
+    })
+    await expect(activeChecklistPanel.getByText('Tiến độ checklist của các Subtask')).toBeVisible()
+    await expect(activeChecklistPanel.getByText('Subtask checklist E2E')).toBeVisible()
+    await expect(activeChecklistPanel.getByText('Hoàn thiện checklist Subtask E2E')).toBeVisible()
 
     await staffPage.getByRole('button', { name: 'Task E2E realtime Task chính' }).click()
     await staffPage.getByRole('button', { name: 'Bắt đầu' }).click()

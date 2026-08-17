@@ -42,6 +42,9 @@
 .checklist .completedItem { color: #206a37; }
 .checklist .completedItem svg { color: #206a37; }
 .checklist .moreItems { color: #607c68; font-weight: 700; }
+.moreItems button { display: inline-flex; align-items: center; gap: 7px; padding: 2px 0; border: 0; outline-offset: 3px; color: inherit; background: transparent; font: inherit; font-weight: inherit; cursor: pointer; }
+.moreItems button:hover { color: #206a37; }
+.moreItems button:focus-visible { outline: 2px solid #206a37; border-radius: 2px; }
 .noChecklist, .noChildren { margin: 12px 0 0; color: #89958d; font-size: 12px; }
 .children { position: relative; margin-left: 32px; padding-left: 20px; }
 .children::before { position: absolute; top: 0; bottom: 22px; left: 0; width: 1px; background: #cfdcd2; content: ''; }
