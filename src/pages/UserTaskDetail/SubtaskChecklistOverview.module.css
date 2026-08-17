@@ -1,0 +1,146 @@
+.section {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid #dfe7e1;
+}
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.heading > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.heading span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #206a37;
+  font-size: 10px;
+  font-weight: 800;
+}
+.heading > div > strong {
+  color: #24382b;
+  font-size: 16px;
+}
+.heading small {
+  color: #748078;
+  font-size: 12px;
+}
+.percentage {
+  flex: 0 0 auto;
+  color: #206a37;
+  font-size: 22px;
+}
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dfe7e1;
+  border-radius: 6px;
+  background: #fbfcfb;
+}
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cardHeader > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.cardHeader strong {
+  overflow-wrap: anywhere;
+  color: #26372c;
+  font-size: 13px;
+}
+.cardHeader > div:first-child span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #758279;
+  font-size: 11px;
+}
+.cardActions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.status {
+  padding: 4px 7px;
+  border-radius: 4px;
+  color: #526158;
+  background: #edf1ee;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.status.in_progress, .status.reviewing { color: #225c8c; background: #e8f2fa; }
+.status.submitted { color: #7a581b; background: #fff3d8; }
+.status.completed { color: #206a37; background: #e8f4eb; }
+.status.rejected { color: #9b3434; background: #fbe9e9; }
+.cardProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  color: #718077;
+  font-size: 11px;
+}
+.cardProgress strong { color: #32443a; }
+.items {
+  display: grid;
+  gap: 7px;
+  margin: 13px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #e3e9e5;
+  list-style: none;
+}
+.items li {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #526158;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.items svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #89958d;
+}
+.items span { overflow-wrap: anywhere; }
+.items .completed { color: #206a37; }
+.items .completed svg { color: #206a37; }
+.items .completed span { text-decoration: line-through; }
+.emptyChecklist {
+  margin: 13px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #e3e9e5;
+  color: #89958d;
+  font-size: 11px;
+}
+
+@media (max-width: 850px) {
+  .list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .heading { gap: 12px; }
+  .cardHeader { align-items: stretch; flex-direction: column; }
+  .cardActions { justify-content: space-between; }
+}

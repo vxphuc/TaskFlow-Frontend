@@ -168,7 +168,48 @@ test.describe.serial('TaskFlow end-to-end', () => {
     await expect(managerPage.getByRole('heading', { name: 'Task E2E realtime' })).toBeVisible()
     await expect(staffPage.getByText('Task E2E realtime')).toBeVisible()
 
-    await staffPage.getByText('Task E2E realtime').click()
+    const managerToken = await managerPage.evaluate(
+      () => localStorage.getItem('access_token'),
+    )
+    const authorization = { Authorization: `Bearer ${managerToken}` }
+    const usersResponse = await managerContext.request.get(
+      'http://127.0.0.1:5173/api/users',
+      { headers: authorization },
+    )
+    expect(usersResponse.ok()).toBeTruthy()
+    const usersPayload = await usersResponse.json()
+    const staffUser = usersPayload.users.find((user) => user.phone === '0900000002')
+    const parentTaskId = new URL(managerPage.url()).pathname.split('/').at(-1)
+    const subtaskResponse = await managerContext.request.post(
+      `http://127.0.0.1:5173/api/tasks/${parentTaskId}/subtasks`,
+      {
+        headers: authorization,
+        data: {
+          title: 'Subtask checklist E2E',
+          description: 'Kiểm tra checklist công việc con trong Task chính.',
+          assigned_to: staffUser.id,
+          priority: 'MEDIUM',
+        },
+      },
+    )
+    expect(subtaskResponse.ok()).toBeTruthy()
+    const subtaskPayload = await subtaskResponse.json()
+    const checklistResponse = await managerContext.request.post(
+      `http://127.0.0.1:5173/api/tasks/${subtaskPayload.subtask.id}/checklist`,
+      {
+        headers: authorization,
+        data: { content: 'Hoàn thiện checklist Subtask E2E' },
+      },
+    )
+    expect(checklistResponse.ok()).toBeTruthy()
+
+    await managerPage.reload()
+    await managerPage.getByRole('tab', { name: /Checklist/ }).click()
+    await expect(managerPage.getByText('Tiến độ checklist của các Subtask')).toBeVisible()
+    await expect(managerPage.getByText('Subtask checklist E2E')).toBeVisible()
+    await expect(managerPage.getByText('Hoàn thiện checklist Subtask E2E')).toBeVisible()
+
+    await staffPage.getByRole('button', { name: 'Task E2E realtime Task chính' }).click()
     await staffPage.getByRole('button', { name: 'Bắt đầu' }).click()
     await expect(staffPage.getByRole('button', { name: 'Gửi kết quả' })).toBeVisible()
 

@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
           label: 'Cấp bậc',
           value: data.highestPositionDepartment?.count || 0,
           note: data.highestPositionDepartment?.count
-            ? `${data.highestPositionDepartment.department.name} có nhiều cấp bậc nhất`
+            ? `Phòng có nhiều cấp bậc nhất`
             : 'Chưa thiết lập cấp bậc',
           path: data.highestPositionDepartment
             ? `/admin/positions?department_id=${data.highestPositionDepartment.department.id}`

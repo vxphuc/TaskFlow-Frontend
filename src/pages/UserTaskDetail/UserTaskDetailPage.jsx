@@ -79,6 +79,7 @@ import {
 import AttachmentPicker from '../../components/AttachmentPicker/AttachmentPicker'
 import { useAuth } from '../../contexts/useAuth'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
+import SubtaskChecklistOverview from './SubtaskChecklistOverview'
 import TaskProgressTree from './TaskProgressTree'
 import {
   formatDateTime,
@@ -201,6 +202,12 @@ export default function UserTaskDetailPage() {
   )
     ? requestedWorkspaceTab
     : 'submissions'
+  const displayedChecklistProgress = canViewProgressTree && progressTree?.summary
+    ? {
+        completed: progressTree.summary.checklist_completed,
+        total: progressTree.summary.checklist_total,
+      }
+    : checklistProgress
 
   const changeWorkspaceTab = (tab) => {
     setSearchParams((params) => {
@@ -923,7 +930,7 @@ export default function UserTaskDetailPage() {
                   label: (
                     <span className={styles.tabLabel}>
                       <FiList />
-                      Checklist ({checklistProgress.completed}/{checklistProgress.total})
+                      Checklist ({displayedChecklistProgress.completed}/{displayedChecklistProgress.total})
                     </span>
                   ),
                   children: (
@@ -1107,6 +1114,14 @@ export default function UserTaskDetailPage() {
                             Bắt đầu task để đánh dấu tiến độ. Khi đã gửi kết quả,
                             checklist sẽ chuyển sang chỉ đọc.
                           </p>
+                      )}
+
+                      {!task.parent_task_id && canViewProgressTree && (
+                        <SubtaskChecklistOverview
+                          data={progressTree}
+                          loading={progressTreeLoading}
+                          onOpenTask={(id) => navigate(`/app/tasks/${id}`)}
+                        />
                       )}
                     </div>
                   ),
