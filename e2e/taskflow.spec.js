@@ -255,7 +255,11 @@ test.describe.serial('TaskFlow end-to-end', () => {
 
     await staffPage.getByRole('button', { name: 'Gửi kết quả' }).click()
     const submitDialog = staffPage.getByRole('dialog', { name: 'Gửi kết quả công việc' })
-    await submitDialog.locator('textarea').fill('Kết quả hoàn thành qua E2E.')
+    const longSubmissionContent = Array.from(
+      { length: 8 },
+      (_, index) => `Nội dung kết quả E2E dòng ${index + 1}.`,
+    ).join('\n')
+    await submitDialog.locator('textarea').fill(longSubmissionContent)
     await submitDialog.locator('input[type="file"]').setInputFiles(resultFile)
     await submitDialog.getByRole('button', { name: 'Xác nhận' }).click()
 
@@ -270,6 +274,12 @@ test.describe.serial('TaskFlow end-to-end', () => {
     await expect(staffPage.getByText('Hoàn thành', { exact: true }).first()).toBeVisible()
     await staffPage.getByRole('tab', { name: /Kết quả/ }).click()
     await expect(staffPage.getByText('result.txt')).toBeVisible()
+    await staffPage.getByRole('button', {
+      name: 'Xem thêm kết quả lần gửi 1',
+    }).click()
+    await expect(staffPage.getByRole('button', {
+      name: 'Thu gọn kết quả lần gửi 1',
+    })).toBeVisible()
 
     await managerPage.goto('/app/reports')
     const downloadPromise = managerPage.waitForEvent('download')

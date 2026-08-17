@@ -25,6 +25,8 @@ import {
   FiArrowLeft,
   FiCalendar,
   FiCheck,
+  FiChevronDown,
+  FiChevronUp,
   FiClock,
   FiDownload,
   FiEdit2,
@@ -105,6 +107,52 @@ const actionLabels = {
   TASK_CANCELLED: 'Đã hủy công việc',
   COMMENT_CREATED: 'Đã gửi trao đổi',
   SUBTASK_CREATED: 'Đã tạo công việc con',
+}
+
+function SubmissionContent({ content, attemptNumber }) {
+  const contentRef = useRef(null)
+  const [expanded, setExpanded] = useState(false)
+  const [canExpand, setCanExpand] = useState(false)
+
+  useEffect(() => {
+    const element = contentRef.current
+    if (!element || expanded) return undefined
+
+    const measureOverflow = () => {
+      setCanExpand(element.scrollHeight > element.clientHeight + 1)
+    }
+    measureOverflow()
+
+    const resizeObserver = new ResizeObserver(measureOverflow)
+    resizeObserver.observe(element)
+    return () => resizeObserver.disconnect()
+  }, [content, expanded])
+
+  return (
+    <div className={styles.submissionContentWrap}>
+      <p
+        ref={contentRef}
+        className={`${styles.submissionContent} ${
+          expanded ? styles.expandedContent : styles.collapsedContent
+        }`}
+      >
+        {content}
+      </p>
+      {canExpand && (
+        <Button
+          type="link"
+          size="small"
+          className={styles.contentToggle}
+          icon={expanded ? <FiChevronUp /> : <FiChevronDown />}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? 'Thu gọn' : 'Xem thêm'} kết quả lần gửi ${attemptNumber}`}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? 'Thu gọn' : 'Xem thêm'}
+        </Button>
+      )}
+    </div>
+  )
 }
 
 const workspaceTabs = new Set([
@@ -1142,7 +1190,10 @@ export default function UserTaskDetailPage() {
                             <strong>Lần gửi #{submission.attempt_number}</strong>
                             <span>{submission.is_withdrawn ? 'Đã thu hồi' : 'Đã gửi'} · {formatDateTime(submission.submitted_at)}</span>
                           </div>
-                          <p>{submission.content}</p>
+                          <SubmissionContent
+                            content={submission.content}
+                            attemptNumber={submission.attempt_number}
+                          />
                           {submission.withdrawal_reason && <small>Lý do thu hồi: {submission.withdrawal_reason}</small>}
                           {submissionAttachments.length > 0 && (
                             <div className={styles.submissionAttachments}>

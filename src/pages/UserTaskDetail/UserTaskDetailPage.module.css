@@ -272,6 +272,31 @@
   line-height: 1.6; 
   white-space: pre-wrap; 
 }
+.submissionContentWrap {
+  min-width: 0;
+}
+.submission .submissionContent {
+  overflow-wrap: anywhere;
+}
+.collapsedContent {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+.expandedContent {
+  display: block;
+}
+.submission .contentToggle {
+  height: 28px;
+  margin-top: 6px;
+  padding: 0;
+  color: #206a37;
+  font-weight: 700;
+}
+.submission .contentToggle:hover {
+  color: #174f2a;
+}
 .submission small { 
   display: block; 
   margin-top: 10px; 
