@@ -65,12 +65,24 @@ test.describe.serial('TaskFlow end-to-end', () => {
     }
 
     await page.goto('/admin')
+    const positionSummary = page.getByRole('button', { name: 'Mở Cấp bậc' })
+    await expect(positionSummary.getByText('2', { exact: true })).toBeVisible()
+    await expect(positionSummary.getByText(/có nhiều cấp bậc nhất$/)).toBeVisible()
+    await positionSummary.click()
+    await expect(page).toHaveURL(/\/admin\/positions\?department_id=/)
+
+    await page.goto('/admin')
     await page.getByRole('button', { name: 'Mở Phòng ban' }).click()
     await expect(page).toHaveURL(/\/admin\/departments$/)
 
     await page.getByLabel('Mở phòng ban Phong E2E').click()
     await expect(page).toHaveURL(/\/admin\/positions\?department_id=/)
     await expect(page.getByText('Quan ly E2E', { exact: true })).toBeVisible()
+
+    await page.getByLabel('Xem nhân sự thuộc cấp bậc Nhan vien E2E').click()
+    await expect(page).toHaveURL(/\/admin\/users\?department_id=.+&position_id=.+/)
+    await expect(page.getByText('0900000002', { exact: true })).toBeVisible()
+    await expect(page.getByText('0900000001', { exact: true })).toHaveCount(0)
 
     await page.goto('/admin/users')
     await expect(page.getByText('Tất cả cấp bậc')).toBeVisible()

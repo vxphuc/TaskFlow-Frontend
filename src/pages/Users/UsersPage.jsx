@@ -1,7 +1,7 @@
 import { App, Avatar, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiKey, FiPlus, FiPower, FiSearch, FiUser } from 'react-icons/fi'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { getPositionsApi } from '../../api/positionApi'
 import { changeUserPasswordApi, createUserApi, getUsersApi, setUserActiveApi, updateUserApi } from '../../api/userApi'
@@ -10,6 +10,7 @@ import styles from './UsersPage.module.css'
 export default function UsersPage() {
   const { message } = App.useApp()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [form] = Form.useForm()
   const [passwordForm] = Form.useForm()
   const [users, setUsers] = useState([])
@@ -22,8 +23,8 @@ export default function UsersPage() {
   const [editing, setEditing] = useState(null)
   const [passwordUser, setPasswordUser] = useState(null)
   const [search, setSearch] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState()
-  const [positionFilter, setPositionFilter] = useState()
+  const departmentFilter = searchParams.get('department_id') || undefined
+  const positionFilter = searchParams.get('position_id') || undefined
   const [statusFilter, setStatusFilter] = useState()
 
   const selectedRole = Form.useWatch('role', form)
@@ -75,6 +76,23 @@ export default function UsersPage() {
       .catch((err) => message.error(err.response?.data?.message || 'Không thể tải danh sách nhân sự.'))
       .finally(() => setLoading(false))
   }, [message])
+
+  const updateFilterParams = (departmentId, positionId) => {
+    const nextParams = new URLSearchParams(searchParams)
+    if (departmentId) nextParams.set('department_id', departmentId)
+    else nextParams.delete('department_id')
+    if (positionId) nextParams.set('position_id', positionId)
+    else nextParams.delete('position_id')
+    setSearchParams(nextParams, { replace: true })
+  }
+
+  const changeDepartmentFilter = (value) => {
+    updateFilterParams(value, undefined)
+  }
+
+  const changePositionFilter = (value) => {
+    updateFilterParams(departmentFilter, value)
+  }
 
   const managerOptions = users
     .filter((user) => {
@@ -194,8 +212,8 @@ export default function UsersPage() {
       <section className={styles.panel}>
         <div className={styles.toolbar}>
           <Input allowClear prefix={<FiSearch />} placeholder="Tìm tên hoặc số điện thoại..." value={search} onChange={(event) => setSearch(event.target.value)} />
-          <Select allowClear placeholder="Tất cả phòng ban" value={departmentFilter} onChange={(value) => { setDepartmentFilter(value); setPositionFilter(undefined) }} options={departments.map((item) => ({ value: item.id, label: item.name }))} />
-          <Select allowClear showSearch optionFilterProp="label" placeholder="Tất cả cấp bậc" value={positionFilter} onChange={setPositionFilter} options={positionFilterOptions} />
+          <Select allowClear placeholder="Tất cả phòng ban" value={departmentFilter} onChange={changeDepartmentFilter} options={departments.map((item) => ({ value: item.id, label: item.name }))} />
+          <Select allowClear showSearch optionFilterProp="label" placeholder="Tất cả cấp bậc" value={positionFilter} onChange={changePositionFilter} options={positionFilterOptions} />
           <Select allowClear placeholder="Tất cả trạng thái" value={statusFilter} onChange={setStatusFilter} options={[{ value: true, label: 'Đang hoạt động' }, { value: false, label: 'Đã vô hiệu hóa' }]} />
           <span>{filteredUsers.length} tài khoản</span>
         </div>

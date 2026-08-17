@@ -1,13 +1,14 @@
 import { App, Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiPlus, FiPower } from 'react-icons/fi'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { getDepartmentsApi } from '../../api/departmentApi'
 import { createPositionApi, getPositionsApi, setPositionActiveApi, updatePositionApi } from '../../api/positionApi'
 import styles from './PositionsPage.module.css'
 
 export default function PositionsPage() {
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [form] = Form.useForm()
   const [departments, setDepartments] = useState([])
@@ -98,13 +99,21 @@ export default function PositionsPage() {
     } catch (err) { message.error(err.response?.data?.message || 'Không thể thay đổi trạng thái.') }
   }
 
+  const openPositionUsers = (position) => {
+    const params = new URLSearchParams({
+      department_id: departmentId,
+      position_id: position.id,
+    })
+    navigate(`/admin/users?${params.toString()}`)
+  }
+
   const columns = [
     { title: 'Thứ tự', dataIndex: 'level_order', key: 'level', width: 90, render: (value) => <span className={styles.level}>Cấp {value}</span> },
     { title: 'Tên cấp bậc', dataIndex: 'name', key: 'name', render: (value, row) => <div className={styles.nameCell}><strong>{value}</strong><span>{row.code}</span></div> },
     { title: 'Cấp trên trực tiếp', dataIndex: 'parent_position_id', key: 'parent', render: (value) => value ? positions.find((item) => item.id === value)?.name || 'Không xác định' : <span className={styles.muted}>Cấp cao nhất</span> },
     { title: 'Quyền báo cáo', dataIndex: 'can_view_department_report', key: 'report', width: 135, render: (value) => value ? <Tag color="green">Được xem</Tag> : <Tag>Không</Tag> },
     { title: 'Trạng thái', dataIndex: 'is_active', key: 'status', width: 135, render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Hoạt động' : 'Tạm ngưng'}</Tag> },
-    { title: '', key: 'actions', width: 105, align: 'right', render: (_, row) => <Space size={4}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(row)} aria-label="Sửa cấp bậc" /><Popconfirm title={row.is_active ? 'Tạm ngưng cấp bậc?' : 'Kích hoạt cấp bậc?'} okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(row)}><Button type="text" danger={row.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
+    { title: '', key: 'actions', width: 105, align: 'right', render: (_, row) => <Space size={4} onClick={(event) => event.stopPropagation()}><Button type="text" icon={<FiEdit2 />} onClick={() => showEdit(row)} aria-label="Sửa cấp bậc" /><Popconfirm title={row.is_active ? 'Tạm ngưng cấp bậc?' : 'Kích hoạt cấp bậc?'} okText="Xác nhận" cancelText="Hủy" onConfirm={() => toggleActive(row)}><Button type="text" danger={row.is_active} icon={<FiPower />} aria-label="Đổi trạng thái" /></Popconfirm></Space> },
   ]
 
   return (
@@ -118,7 +127,29 @@ export default function PositionsPage() {
           <div><label>Phòng ban</label><Select value={departmentId} onChange={changeDepartment} placeholder="Chọn phòng ban" options={departments.map((item) => ({ value: item.id, label: item.name, disabled: !item.is_active }))} /></div>
           <span>{positions.length} cấp bậc</span>
         </div>
-        <Table rowKey="id" columns={columns} dataSource={positions} loading={loading} pagination={false} scroll={{ x: 850 }} locale={{ emptyText: <Empty description={departmentId ? 'Phòng ban chưa có cấp bậc' : 'Chọn một phòng ban'} /> }} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={positions}
+          loading={loading}
+          pagination={false}
+          scroll={{ x: 850 }}
+          onRow={(position) => ({
+            className: styles.clickableRow,
+            tabIndex: 0,
+            role: 'button',
+            'aria-label': `Xem nhân sự thuộc cấp bậc ${position.name}`,
+            onClick: () => openPositionUsers(position),
+            onKeyDown: (event) => {
+              if (event.target !== event.currentTarget) return
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                openPositionUsers(position)
+              }
+            },
+          })}
+          locale={{ emptyText: <Empty description={departmentId ? 'Phòng ban chưa có cấp bậc' : 'Chọn một phòng ban'} /> }}
+        />
       </section>
 
       <Modal title={editing ? 'Cập nhật cấp bậc' : `Thêm cấp bậc · ${selectedDepartment?.name || ''}`} open={open} onCancel={() => setOpen(false)} onOk={submit} confirmLoading={saving} okText={editing ? 'Lưu thay đổi' : 'Thêm cấp bậc'} cancelText="Hủy" destroyOnHidden>

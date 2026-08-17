@@ -23,9 +23,16 @@ export default function AdminDashboardPage() {
         const positionResponses = await Promise.all(
           departments.map((department) => getPositionsApi(department.id)),
         )
-        const positions = positionResponses.flatMap((response) => response.data.positions || [])
+        const positionCounts = departments.map((department, index) => ({
+          department,
+          count: (positionResponses[index].data.positions || []).length,
+        }))
+        const highestPositionDepartment = positionCounts.reduce(
+          (highest, current) => (!highest || current.count > highest.count ? current : highest),
+          null,
+        )
         const users = usersRes.data.users || []
-        setData({ departments, positions, users })
+        setData({ departments, highestPositionDepartment, users })
       } catch (err) {
         setError(err.response?.data?.message || 'Không thể tải dữ liệu tổng quan.')
       }
@@ -37,7 +44,17 @@ export default function AdminDashboardPage() {
     ? [
         { label: 'Phòng ban', value: data.departments.length, note: `${data.departments.filter((item) => item.is_active).length} đang hoạt động`, path: '/admin/departments', icon: <FiBriefcase /> },
         { label: 'Nhân sự', value: data.users.filter((item) => item.role === 'USER').length, note: `${data.users.filter((item) => item.role === 'USER' && item.is_active).length} tài khoản hoạt động`, path: '/admin/users', icon: <FiUsers /> },
-        { label: 'Cấp bậc', value: data.positions.length, note: 'Thiết lập theo từng phòng ban', path: '/admin/positions', icon: <FiLayers /> },
+        {
+          label: 'Cấp bậc',
+          value: data.highestPositionDepartment?.count || 0,
+          note: data.highestPositionDepartment?.count
+            ? `${data.highestPositionDepartment.department.name} có nhiều cấp bậc nhất`
+            : 'Chưa thiết lập cấp bậc',
+          path: data.highestPositionDepartment
+            ? `/admin/positions?department_id=${data.highestPositionDepartment.department.id}`
+            : '/admin/positions',
+          icon: <FiLayers />,
+        },
         { label: 'Quản trị viên', value: data.users.filter((item) => item.role === 'SYSTEM_ADMIN').length, note: 'Quản lý trong công ty', path: '/admin/users', icon: <FiUserCheck /> },
       ]
     : []

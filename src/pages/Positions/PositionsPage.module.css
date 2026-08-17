@@ -54,6 +54,9 @@
 .nameCell { display: grid; gap: 3px; }
 .nameCell span { color: #738078; font-size: 11px; font-weight: 700; }
 .muted { color: #97a29a; }
+.clickableRow { cursor: pointer; }
+.clickableRow:hover > td, .clickableRow:focus-visible > td { background: #f2f8f4 !important; }
+.clickableRow:focus-visible { outline: 2px solid #206a37; outline-offset: -2px; }
 .form { margin-top: 22px; }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
