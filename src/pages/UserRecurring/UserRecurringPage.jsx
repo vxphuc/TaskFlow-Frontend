@@ -11,6 +11,7 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
   TimePicker,
@@ -101,6 +102,7 @@ export default function UserRecurringPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const selectedFrequency = Form.useWatch('frequency', templateForm)
   const selectedAssignee = Form.useWatch('assigned_to', templateForm)
+  const reviewRequired = Form.useWatch('review_required', templateForm)
 
   const loadPage = useCallback(async () => {
     setLoading(true)
@@ -165,6 +167,7 @@ export default function UserRecurringPage() {
       due_time: parseDueTime(),
       assigned_to: user.id,
       reviewer_id: undefined,
+      review_required: false,
     })
     setFormOpen(true)
   }
@@ -176,6 +179,7 @@ export default function UserRecurringPage() {
       description: template.description,
       assigned_to: template.assigned_to,
       reviewer_id: template.reviewer_id || undefined,
+      review_required: template.requires_review,
       frequency: template.frequency,
       generate_day: template.generate_day,
       due_after_days: template.due_after_days,
@@ -469,7 +473,10 @@ export default function UserRecurringPage() {
             <Select
               showSearch
               optionFilterProp="label"
-              onChange={() => templateForm.setFieldValue('reviewer_id', undefined)}
+              onChange={(assigneeId) => templateForm.setFieldsValue({
+                reviewer_id: undefined,
+                review_required: assigneeId !== user.id,
+              })}
               options={[
                 { value: user.id, label: `${user.full_name} · Bản thân` },
                 ...assignees
@@ -481,23 +488,45 @@ export default function UserRecurringPage() {
               ]}
             />
           </Form.Item>
-          {selectedAssignee === user.id && (
+          <Form.Item
+            name="review_required"
+            label="Cần duyệt kết quả"
+            valuePropName="checked"
+            extra={
+              reviewRequired
+                ? 'Kết quả phải được duyệt trước khi Task hoàn thành.'
+                : 'Gửi kết quả xong, Task sẽ tự chuyển sang Hoàn thành.'
+            }
+          >
+            <Switch
+              checkedChildren="Có"
+              unCheckedChildren="Không"
+              onChange={(checked) => {
+                if (!checked) templateForm.setFieldValue('reviewer_id', undefined)
+              }}
+            />
+          </Form.Item>
+          {reviewRequired && selectedAssignee === user.id && (
             <Form.Item
               name="reviewer_id"
               label="Người duyệt kết quả"
-              extra="Để trống nếu task tự hoàn thành ngay sau khi bạn gửi kết quả."
+              rules={[{ required: true, message: 'Chọn người duyệt kết quả.' }]}
             >
               <Select
-                allowClear
                 showSearch
                 optionFilterProp="label"
-                placeholder="Không cần duyệt"
+                placeholder="Chọn người duyệt"
                 options={reviewers.map((reviewer) => ({
                   value: reviewer.id,
                   label: `${reviewer.full_name} · ${reviewer.phone}`,
                 }))}
               />
             </Form.Item>
+          )}
+          {reviewRequired && selectedAssignee !== user.id && (
+            <p className={styles.reviewHint}>
+              Bạn sẽ là người duyệt kết quả của Task định kỳ này.
+            </p>
           )}
           <Form.Item
             name="frequency"

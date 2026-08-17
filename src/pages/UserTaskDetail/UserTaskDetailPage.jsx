@@ -895,7 +895,10 @@ export default function UserTaskDetailPage() {
               </strong>
               {!task.is_personal && (
                 <small>
-                  Người duyệt: {task.reviewer_name || 'Người giao'}
+                  Người duyệt:{' '}
+                  {task.requires_review
+                    ? task.reviewer_name || 'Người giao'
+                    : 'Không cần duyệt'}
                 </small>
               )}
             </div>

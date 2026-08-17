@@ -303,7 +303,14 @@ export default function UserCreatedTasksPage() {
                 <span className={styles.description}>{task.description || 'Không có mô tả công việc.'}</span>
                 <span className={styles.people}>
                   <span><FiUser /> Người thực hiện: <b>{task.assigned_to_name || 'Chưa xác định'}</b></span>
-                  <span>Người duyệt: <b>{task.reviewer_name || 'Bạn'}</b></span>
+                  <span>
+                    Người duyệt:{' '}
+                    <b>
+                      {task.requires_review
+                        ? task.reviewer_name || 'Bạn'
+                        : 'Không cần duyệt'}
+                    </b>
+                  </span>
                 </span>
                 <span className={styles.cardBottom}>
                   <small>Hạn {formatDateTime(task.due_date)}</small><FiArrowRight />
