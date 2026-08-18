@@ -4,10 +4,39 @@ import { FiArrowRight, FiBriefcase, FiCheckCircle, FiLock, FiPhone } from 'react
 import { useAuth } from '../../contexts/useAuth'
 import styles from './LoginPage.module.css'
 
+const IDENTITY_COLORS = [
+  { value: '#174d29', label: 'Xanh lá' },
+  { value: '#0C1C4D', label: 'Xanh navy' },
+  { value: '#F6903C', label: 'Cam' },
+]
+const IDENTITY_COLOR_STORAGE_KEY = 'taskflow_login_identity_color'
+
+const getInitialIdentityColor = () => {
+  try {
+    const storedColor = localStorage.getItem(IDENTITY_COLOR_STORAGE_KEY)
+    return IDENTITY_COLORS.some(({ value }) => value === storedColor)
+      ? storedColor
+      : IDENTITY_COLORS[0].value
+  } catch {
+    return IDENTITY_COLORS[0].value
+  }
+}
+
 export default function LoginPage() {
   const { login } = useAuth()
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [identityColor, setIdentityColor] = useState(getInitialIdentityColor)
+  const identityContrastColor = identityColor === '#F6903C' ? '#17211a' : '#fff'
+
+  const selectIdentityColor = (color) => {
+    setIdentityColor(color)
+    try {
+      localStorage.setItem(IDENTITY_COLOR_STORAGE_KEY, color)
+    } catch {
+      // The selected color still applies for this session when storage is unavailable.
+    }
+  }
 
   const onFinish = async (values) => {
     setError('')
@@ -22,7 +51,31 @@ export default function LoginPage() {
   }
 
   return (
-    <main className={styles.page}>
+    <main
+      className={styles.page}
+      style={{
+        '--identity-color': identityColor,
+        '--identity-contrast-color': identityContrastColor,
+      }}
+    >
+      <div
+        className={styles.colorPicker}
+        role="group"
+        aria-label="Chọn màu nền trang đăng nhập"
+      >
+        {IDENTITY_COLORS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            className={`${styles.colorSwatch} ${identityColor === value ? styles.colorSwatchActive : ''}`}
+            style={{ backgroundColor: value }}
+            title={label}
+            aria-label={`Chọn màu ${label}`}
+            aria-pressed={identityColor === value}
+            onClick={() => selectIdentityColor(value)}
+          />
+        ))}
+      </div>
       <section className={styles.identity}>
         <div className={styles.identityInner}>
           <div className={styles.brand}>

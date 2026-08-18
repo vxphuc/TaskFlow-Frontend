@@ -9,7 +9,38 @@
   min-height: 100vh; 
   overflow: hidden; 
   color: #fff; 
-  background: #174d29; 
+  background: var(--identity-color, #174d29);
+  transition: background-color 180ms ease;
+}
+.colorPicker {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.colorSwatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, .95);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(23, 33, 26, .24);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.colorSwatch:hover {
+  transform: scale(1.12);
+}
+.colorSwatch:focus-visible {
+  outline: 2px solid #17211a;
+  outline-offset: 3px;
+}
+.colorSwatchActive {
+  box-shadow: 0 0 0 2px #fbfcfb, 0 0 0 4px #34443a;
+  transform: scale(1.08);
 }
 .identityInner { 
   position: relative; 
@@ -149,7 +180,18 @@
   justify-content: center; 
   gap: 9px; 
   margin-top: 8px; 
+  color: var(--identity-contrast-color, #fff) !important;
+  background: var(--identity-color, #174d29) !important;
+  border-color: var(--identity-color, #174d29) !important;
   font-weight: 700; 
+  transition: filter 160ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+.submit:not(:disabled):hover,
+.submit:not(:disabled):focus-visible {
+  color: var(--identity-contrast-color, #fff) !important;
+  background: var(--identity-color, #174d29) !important;
+  border-color: var(--identity-color, #174d29) !important;
+  filter: brightness(.9);
 }
 .formWrap footer { 
   margin-top: 54px; 
@@ -161,6 +203,7 @@
 @media (max-width: 850px) {
   .page { grid-template-columns: 1fr; }
   .identity { display: none; }
+  .colorPicker { display: none; }
   .formSide { padding: 28px 20px; }
   .mobileBrand { display: flex; position: absolute; top: 24px; left: 24px; }
   .mobileBrand .logoMark { border: 0; background: transparent; }
