@@ -13,7 +13,9 @@ import {
   FiUsers,
 } from 'react-icons/fi'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import ThemeColorPicker from '../../components/ThemeColorPicker/ThemeColorPicker'
 import { useAuth } from '../../contexts/useAuth'
+import { useAppThemeColor } from '../../hooks/useAppThemeColor'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
 import styles from './AdminLayout.module.css'
 
@@ -45,6 +47,22 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
+  const { color: themeColor, contrastColor, selectColor } = useAppThemeColor()
+  const usesDarkText = contrastColor !== '#fff'
+  const sidebarTheme = {
+    '--sidebar-color': themeColor,
+    '--sidebar-text-color': contrastColor,
+    '--sidebar-item-color': usesDarkText
+      ? 'rgba(23, 33, 26, .78)'
+      : 'rgba(255, 255, 255, .8)',
+    '--sidebar-muted-color': usesDarkText
+      ? 'rgba(23, 33, 26, .62)'
+      : 'rgba(255, 255, 255, .52)',
+    '--sidebar-active-background': usesDarkText
+      ? 'rgba(23, 33, 26, .14)'
+      : 'rgba(255, 255, 255, .14)',
+    '--theme-picker-focus': contrastColor,
+  }
 
   const selectedKey = useMemo(() => {
     const match = [...navigation]
@@ -87,11 +105,16 @@ export default function AdminLayout() {
   )
 
   return (
-    <Layout className={styles.shell}>
+    <Layout className={styles.shell} style={sidebarTheme}>
       <Sider width={244} className={styles.sider}>
         <Brand />
         <div className={styles.navLabel}>QUẢN TRỊ HỆ THỐNG</div>
         {navMenu}
+        <ThemeColorPicker
+          className={styles.siderColorPicker}
+          value={themeColor}
+          onChange={selectColor}
+        />
         <div className={styles.siderFooter}>TaskFlow Enterprise</div>
       </Sider>
 
@@ -136,9 +159,16 @@ export default function AdminLayout() {
         onClose={() => setMobileOpen(false)}
         closable={false}
       >
-        <Brand />
-        <div className={styles.navLabel}>QUẢN TRỊ HỆ THỐNG</div>
-        {navMenu}
+        <div className={styles.mobileNav} style={sidebarTheme}>
+          <Brand />
+          <div className={styles.navLabel}>QUẢN TRỊ HỆ THỐNG</div>
+          {navMenu}
+          <ThemeColorPicker
+            className={styles.siderColorPicker}
+            value={themeColor}
+            onChange={selectColor}
+          />
+        </div>
       </Drawer>
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
     </Layout>

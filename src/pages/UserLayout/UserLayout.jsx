@@ -37,11 +37,13 @@ import {
   markNotificationReadApi,
 } from '../../api/notificationApi'
 import { useAuth } from '../../contexts/useAuth'
+import { useAppThemeColor } from '../../hooks/useAppThemeColor'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 import { useRealtimeStatus } from '../../hooks/useRealtimeStatus'
 import { formatDateTime } from '../../utils/task'
 import ChangePasswordModal from '../Account/ChangePasswordModal'
 import AIAssistantWidget from '../AIAssistant/AIAssistantWidget'
+import ThemeColorPicker from '../../components/ThemeColorPicker/ThemeColorPicker'
 import styles from './UserLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -89,6 +91,22 @@ export default function UserLayout() {
   const [notifications, setNotifications] = useState([])
   const [notificationLoading, setNotificationLoading] = useState(false)
   const realtimeStatus = useRealtimeStatus()
+  const { color: themeColor, contrastColor, selectColor } = useAppThemeColor()
+  const usesDarkText = contrastColor !== '#fff'
+  const sidebarTheme = {
+    '--sidebar-color': themeColor,
+    '--sidebar-text-color': contrastColor,
+    '--sidebar-item-color': usesDarkText
+      ? 'rgba(23, 33, 26, .78)'
+      : 'rgba(255, 255, 255, .8)',
+    '--sidebar-muted-color': usesDarkText
+      ? 'rgba(23, 33, 26, .62)'
+      : 'rgba(255, 255, 255, .52)',
+    '--sidebar-active-background': usesDarkText
+      ? 'rgba(23, 33, 26, .14)'
+      : 'rgba(255, 255, 255, .14)',
+    '--theme-picker-focus': contrastColor,
+  }
 
   const selectedKey = useMemo(() => {
     const match = [...navigation]
@@ -187,11 +205,16 @@ export default function UserLayout() {
   ]
 
   return (
-    <Layout className={styles.shell}>
+    <Layout className={styles.shell} style={sidebarTheme}>
       <Sider width={244} className={styles.sider}>
         <Brand />
         <div className={styles.navLabel}>KHÔNG GIAN LÀM VIỆC</div>
         {navMenu}
+        <ThemeColorPicker
+          className={styles.siderColorPicker}
+          value={themeColor}
+          onChange={selectColor}
+        />
         <div className={styles.siderFooter}>
           <FiClipboard />
           <span>TaskFlow Enterprise</span>
@@ -263,9 +286,16 @@ export default function UserLayout() {
         onClose={() => setMobileOpen(false)}
         closable={false}
       >
-        <Brand />
-        <div className={styles.navLabel}>KHÔNG GIAN LÀM VIỆC</div>
-        {navMenu}
+        <div className={styles.mobileNav} style={sidebarTheme}>
+          <Brand />
+          <div className={styles.navLabel}>KHÔNG GIAN LÀM VIỆC</div>
+          {navMenu}
+          <ThemeColorPicker
+            className={styles.siderColorPicker}
+            value={themeColor}
+            onChange={selectColor}
+          />
+        </div>
       </Drawer>
 
       <Drawer

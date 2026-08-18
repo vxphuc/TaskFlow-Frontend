@@ -1,0 +1,31 @@
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, .95);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(23, 33, 26, .24);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+}
+
+.swatch:focus-visible {
+  outline: 2px solid var(--theme-picker-focus, #17211a);
+  outline-offset: 3px;
+}
+
+.active {
+  box-shadow: 0 0 0 2px #fbfcfb, 0 0 0 4px #34443a;
+  transform: scale(1.08);
+}
+
